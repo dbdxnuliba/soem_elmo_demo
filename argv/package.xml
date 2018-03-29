@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>argv</name>
+  <version>0.0.1</version>
+  <description>Meta package for autonomous robot ground veichle with Elmo drive servo and VectorNav IMU</description>
+
+  <author email="makhabhi@isu.edu">Robotics Developer</author>
+  <maintainer email="makhabhi@isu.edu">Robotics Developer</maintainer>
+
+  
+  <url type="website">http://ros.org/wiki/minas</url>
+  <url type="repository">https://github.com/tork-a/minas</url>
+  
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!--run_depend>ethercat_manager</run_depend-->
+  
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
+
