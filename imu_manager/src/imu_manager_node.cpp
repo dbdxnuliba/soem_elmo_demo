@@ -24,14 +24,14 @@ int main(int argc, char **argv)
 
   ImuManager imu(nh, stop_service, reload_service, imu_topic,
                  baudRate, rate, frame_id, interface);
-  //controller_manager::ControllerManager cm(&imu, nh);
+  controller_manager::ControllerManager cm(&imu, nh);
   ros::Rate rate_t(1.0 / imu.getPeriod().toSec());
   ros::AsyncSpinner spinner(1);
   spinner.start();
   while(ros::ok()){
-    //imu.read();
-    //cm.update(imu.getTime(), imu.getPeriod());
-    //imu.write();
+    imu.read();
+    cm.update(imu.getTime(), imu.getPeriod());
+    imu.write();
     rate_t.sleep();
   }
   spinner.stop();
