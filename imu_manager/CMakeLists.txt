@@ -10,6 +10,12 @@ project(imu_manager)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
+  std_msgs
+  controller_interface
+  controller_manager
+  hardware_interface
+  pluginlib
+  realtime_tools
 )
 
 ## System dependencies are found with CMake's conventions
@@ -103,10 +109,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS
-   include
+    include
   LIBRARIES
-   imu_manager
+    imu_manager
   CATKIN_DEPENDS roscpp sensor_msgs
+    std_msgs
+    controller_interface
+    controller_manager
+    hardware_interface
+    pluginlib
+    realtime_tools
  # DEPENDS system_lib
 )
 
