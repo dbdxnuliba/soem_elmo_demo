@@ -102,10 +102,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES imu_manager
-#  CATKIN_DEPENDS roscpp sensor_msgs
-#  DEPENDS system_lib
+  INCLUDE_DIRS
+   include
+  LIBRARIES
+   imu_manager
+  CATKIN_DEPENDS roscpp sensor_msgs
+ # DEPENDS system_lib
 )
 
 ###########
@@ -114,15 +116,16 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(include ${catkin_INCLUDE_DIRS})
+add_subdirectory(vnproglib-1.1/cpp)
+include_directories(vnproglib-1.1/cpp/include ${catkin_INCLUDE_DIRS})
+link_directories(vnproglib-1.1/cpp/build/bin)
+
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/imu_manager.cpp
-# )
+add_library(imu_manager src/imu_manager.cpp)
+target_link_libraries(imu_manager ${catkin_LIBRARIES} vncxx)
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -163,12 +166,11 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-## Mark executables and/or libraries for installation
-# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS imu_manager
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
