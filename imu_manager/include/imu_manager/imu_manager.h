@@ -18,12 +18,14 @@ using namespace vn::sensors;
 using namespace vn::protocol::uart;
 using namespace vn::xplat;
 
+
 /**
  * @brief Class for Interfacing with VectorNav imu inheriting from
  * hardware_interface::RobotHw
  */
 class ImuManager : public hardware_interface::RobotHW{
 
+public:
   /**
    * @brief Constructor
    * @param node Nodehandle
@@ -36,9 +38,10 @@ class ImuManager : public hardware_interface::RobotHW{
    */
   ImuManager(ros::NodeHandle &node, const std::string& stop_service,
              const std::string& reload_service, const std::string imu_topic,
-             int baudRate, int timeOut, const std::string frame_id);
+             const int baudRate, const int rate, const std::string frame_id, const std::string sensor_port);
 
 
+  ~ImuManager();
   /**
    * @brief function to read the sensor data
    */
@@ -48,6 +51,18 @@ class ImuManager : public hardware_interface::RobotHW{
    * @brief function to publish sensor data
    */
   void write();
+
+  /**
+   * @brief function to return time
+   * @return
+   */
+  ros::Time getTime() const;
+
+  /**
+   * @brief function to return period
+   * @return
+   */
+  ros::Duration getPeriod() const;
 
   /**
    * @brief callback function to answer reload service
@@ -61,9 +76,15 @@ class ImuManager : public hardware_interface::RobotHW{
    */
   bool stop_callback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
-
-
-
+  /**
+   * @brief BinaryAsyncMessageReceived callack function to process data packet from sensor
+   * @param userData Pointer to user data that was initially supplied
+  ///     when the callback was registered via registerAsyncPacketReceivedHandler.
+   * @param p asyncPacket The asynchronous packet received.
+   * @param index packetStartRunningIndex The running index of the start of
+  ///     the packet.
+   */
+  void BinaryAsyncMessageReceived(void* userData, Packet& p, size_t index);
 
 
 
@@ -74,24 +95,26 @@ private:
   bool running_;
   ros::Publisher pub_;
   std::string frame_id_;
+  std::string sensor_port_;
 
   int baudRate_;
-  int timeOut_;
+  int rate_;
 
   hardware_interface::ImuSensorInterface imu_sensor_interface_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
 
-  /**
-   * @brief function to return time
-   * @return
-   */
-  ros::Time getTime() const;
+  //VsSensor object
+  VnSensor vs_;
 
-  /**
-   * @brief function to return period
-   * @return
-   */
-  ros::Duration getPeriod() const;
+  sensor_msgs::Imu imu_data_;
+  double orientation_[4];
+  double orientation_covariance_[9];
+  double ang_vel_[3];
+  double ang_vel_covariance_[9];
+  double lin_acc_[3];
+  double lin_acc_covariance_[9];
+
+
 
 
 };

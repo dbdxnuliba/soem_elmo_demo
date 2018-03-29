@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(imu_manager)
+project(argv_bringup)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -9,13 +9,6 @@ project(imu_manager)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  sensor_msgs
-  std_msgs
-  controller_interface
-  controller_manager
-  hardware_interface
-  pluginlib
-  realtime_tools
 )
 
 ## System dependencies are found with CMake's conventions
@@ -75,7 +68,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   sensor_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -108,18 +101,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
-    include
-  LIBRARIES
-    imu_manager
-  CATKIN_DEPENDS roscpp sensor_msgs
-    std_msgs
-    controller_interface
-    controller_manager
-    hardware_interface
-    pluginlib
-    realtime_tools
- # DEPENDS system_lib
+#  INCLUDE_DIRS include
+#  LIBRARIES argv_bringup
+#  CATKIN_DEPENDS roscpp
+#  DEPENDS system_lib
 )
 
 ###########
@@ -128,16 +113,15 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${catkin_INCLUDE_DIRS})
-add_subdirectory(vnproglib-1.1/cpp)
-include_directories(vnproglib-1.1/cpp/include ${catkin_INCLUDE_DIRS})
-link_directories(vnproglib-1.1/cpp/build/bin)
-
+include_directories(
+# include
+  ${catkin_INCLUDE_DIRS}
+)
 
 ## Declare a C++ library
-add_library(imu_manager src/imu_manager.cpp)
-target_link_libraries(imu_manager ${catkin_LIBRARIES} vncxx)
-
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/argv_bringup.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -147,9 +131,7 @@ target_link_libraries(imu_manager ${catkin_LIBRARIES} vncxx)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/imu_manager_node.cpp)
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_node imu_manager ${catkin_LIBRARIES})
+# add_executable(${PROJECT_NAME}_node src/argv_bringup_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -180,11 +162,12 @@ target_link_libraries(${PROJECT_NAME}_node imu_manager ${catkin_LIBRARIES})
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-install(TARGETS imu_manager
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+## Mark executables and/or libraries for installation
+# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
@@ -205,7 +188,7 @@ install(TARGETS imu_manager
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_imu_manager.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_argv_bringup.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
