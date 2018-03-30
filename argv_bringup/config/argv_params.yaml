@@ -1,0 +1,5 @@
+imu:
+  interface : dev/ttyS0
+  baudrate : 115200
+  rate : 800
+  mode : binary
