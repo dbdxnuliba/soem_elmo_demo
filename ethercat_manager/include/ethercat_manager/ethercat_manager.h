@@ -29,14 +29,14 @@ public:
   uint8_t readOutput(int slave_no, uint8_t channel) const;
 
   template<typename T>
-  uint8_t writeSDO(int slave_no, uint8_t index, uint8_t subidx, T value) const;
+  uint8_t writeSDO(int slave_no, uint16_t index, uint8_t subidx, T value) const;
 
   template<typename T>
-  T readSDO(int slave_no, uint8_t index, uint8_t subidx, T value) const;
+  T readSDO(int slave_no, uint16_t index, uint8_t subidx) const;
 
   int getNumClients() const;
 
-  void getStatus(int slave_no, std::string &name, int &eep_id, int &eep_rev, int &obits, int &ibits, int &state,
+  void getStatus(int slave_no, std::string &name, int &eep_man, int &eep_id, int &eep_rev, int &obits, int &ibits, int &state,
                  int &pdelay, int &hasdc, int &activeports, int &configadr) const;
 
 private:
