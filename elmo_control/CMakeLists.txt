@@ -112,7 +112,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS
     include
-  LIBRARIES elmo_client
+  LIBRARIES elmo_client elmo_hardware_interface
   CATKIN_DEPENDS roscpp diagnostic_updater trajectory_msgs sensor_msgs
 #  DEPENDS system_lib
 )
@@ -131,8 +131,8 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(elmo_client src/elmo_client.cpp
- )
+add_library(elmo_client src/elmo_client.cpp)
+#add_library(elmo_hardware_interface src/elmo_hardware_interface.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -148,9 +148,11 @@ target_link_libraries(reset ${catkin_LIBRARIES} elmo_client)
 
 add_executable(simple_example src/tests/simple_example.cpp)
 target_link_libraries(simple_example ${catkin_LIBRARIES} elmo_client)
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/elmo_control_node.cpp)
+
+add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
+#add_dependencies(elmo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(elmo elmo_client ${catkin_LIBRARIES})
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

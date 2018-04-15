@@ -98,6 +98,11 @@ int main(int argc, char *argv[]){
 
       //client->setProfileVeclocity(0x20000000);
       client->writeOutputs(output);
+      while ( ! (input.statusword & 0x1000) ) {// bit12 (set-point-acknowledge)
+        input = client->readInputs();
+      }
+      output.controlword &= ~0x0010; // clear new-set-point (bit4)
+      client->writeOutputs(output);
       printf("target velocity = %08x\n", output.target_velocity);
     }
 
@@ -118,7 +123,7 @@ int main(int argc, char *argv[]){
             printf("target reached\n");
             break;
           }
-          printf("Tick %8d.%09d\n", tick.tv_sec, tick.tv_nsec);
+          printf("Tick %8lu.%09lu\n", tick.tv_sec, tick.tv_nsec);
           printf("Input:\n");
           printf(" 6041h %08x : StatusWord\n", input.statusword);
           printf(" 6061h %08x : Modes of Operation Display\n", input.operation_mode);
@@ -136,7 +141,7 @@ int main(int argc, char *argv[]){
           printf(" 60FFh %08x : Target Velocity\n", output.target_velocity);
         }
         if(output.operation_mode = 0x09){
-          output.target_velocity = 0x80000*sin(i%200.0);
+          output.target_velocity = 0x80000*sin(i/200.0);
         }
         client->writeOutputs(output);
       }
