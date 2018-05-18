@@ -10,9 +10,6 @@ class EtherCatManager;
 
 namespace  elmo_control {
 
-
-
-
 typedef struct{
   uint16 statusword;
   uint8 operation_mode;

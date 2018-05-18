@@ -1,4 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
 <launch>
-  <include file="$(find imu_manager)/launch/imu_manager.launch"/>
-  <rosparam file="$(find argv_bringup)/config/argv_params.yaml" command="load" />
+
+<!-- GDB functionality -->
+  <arg name="debug" default="false" />
+  <arg name="simulation" default="false" />
+  <arg name="eth" default="eth0" />
+
+  <group unless="$(arg simulation)">
+    <include file="$(find imu_manager)/launch/imu_manager.launch"/>
+    <rosparam file="$(find argv_bringup)/config/argv_params.yaml" command="load" />
+  </group>
+
+  <!-- Load robot description -->
+  <!--param name="robot_description"
+    command="$(find xacro)/xacro.py '$(find argv_description)/urdf/tra1.xacro'" /-->
+
+  <rosparam>
+elmo/joint1/torque_for_emergency_stop : 0  <!-- 0 % -->
+elmo/joint1/over_load_level           : 0  <!-- 0 % -->
+elmo/joint1/over_speed_level          : 0  <!-- rad/min -->
+elmo/joint1/motor_working_range       : 1    <!-- 1 : full range-->
+elmo/joint1/max_motor_speed           : 3000 <!-- rad/min -->
+elmo/joint1/max_torque                : 1000   <!-- % (unit 0.1 %) -->
+elmo/joint1/home_encoder_offset       : 0  <!-- Enter encoder offset value at zero-angle -->
+elmo/joint2/torque_for_emergency_stop : 0
+elmo/joint2/over_load_level           : 0
+elmo/joint2/over_speed_level          : 0
+elmo/joint2/motor_working_range       : 1
+elmo/joint2/max_motor_speed           : 3000
+elmo/joint2/max_torque                : 1000
+elmo/joint2/home_encoder_offset       : 0  <!-- Enter encoder offset value at zero-angle -->
+elmo/joint3/torque_for_emergency_stop : 0
+elmo/joint3/over_load_level           : 0
+elmo/joint3/over_speed_level          : 0
+elmo/joint3/motor_working_range       : 1
+elmo/joint3/max_motor_speed           : 3000
+elmo/joint3/max_torque                : 1500
+elmo/joint3/home_encoder_offset       : 0  <!-- Enter encoder offset value at zero-angle -->
+elmo/joint4/torque_for_emergency_stop : 0
+elmo/joint4/over_load_level           : 0
+elmo/joint4/over_speed_level          : 0
+elmo/joint4/motor_working_range       : 1
+elmo/joint4/max_motor_speed           : 3000
+elmo/joint4/max_torque                : 1000
+elmo/joint4/home_encoder_offset       : 0  <!-- Enter encoder offset value at zero-angle -->
+
+  </rosparam>
+  <!-- Load hardware interface -->
+  <include file="$(find elmo_control)/launch/elmo_control.launch" >
+    <param name="debug" value="$(arg debug)" />
+    <param name="simulation" value="$(arg simulation)" />
+    <param name="eth" value="$(arg eth)" />
+  </include>
+
+  <!-- If needed, broadcast static tf for robot root -->
+  <node pkg="tf" type="static_transform_publisher" name="world_link_broadcaster"
+        args="0 0 0 0 0 0 /world /base_link 100" />
+
+  <!-- Given the published joint states, publish tf for the robot links -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
+
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <!--rosparam file="$(find argv_bringup)/config/elmo_controllers.yaml"
+            command="load"/-->
+
+  <!-- Load the default controllers -->
+  <!--node name="controller_spawner" pkg="controller_manager"
+        type="spawner" respawn="false"
+        output="screen"
+        args="--shutdown-timeout 0.1
+              joint_state_controller
+              position_trajectory_controller
+              " /-->
+
+
 </launch>

@@ -20,10 +20,11 @@
 
 namespace {
 
-static const unsigned THREAD_SLEEP_TIME = 1000;
+static const unsigned THREAD_SLEEP_TIME = 1000; //1ms
 static const unsigned EC_TIMEOUTMON = 500;
 static const int NSEC_PER_SECOND = 1e+9;
 
+//Keeping track of ticks
 void timespecInc(struct timespec &tick, int nsec){
   tick.tv_nsec += nsec;
   while(tick.tv_nsec >= NSEC_PER_SECOND){
@@ -32,6 +33,7 @@ void timespecInc(struct timespec &tick, int nsec){
   }
 }
 
+//Handling Errors
 void handleErrors(){
   ec_group[0].docheckstate = FALSE;
   ec_readstate();
@@ -77,6 +79,7 @@ void handleErrors(){
  }
 }
 
+//Main thread for sending and receiving data
 void cycleWorker(boost::mutex& mutex, bool& stop_flag){
   double period = THREAD_SLEEP_TIME * 1000;
   struct timespec tick;
@@ -106,13 +109,34 @@ void cycleWorker(boost::mutex& mutex, bool& stop_flag){
   }
 }
 
-}
+} //end of namespace
 
 
 namespace ethercat {
 
 EtherCatManager::EtherCatManager(const std::string &ifname)
   :ifname_(ifname), num_clients_(0), stop_flag_(false){
+  /*
+  std::cout<<"The ifname is: "<<ifname<<std::endl;
+  char *cstr = new char[ifname.length()+1];
+  strcpy(cstr, ifname.c_str());
+  char IOmap[4096];
+  if (ec_init(cstr)){
+    printf("ec_init on %s succeeded.\n",cstr);
+    if ( ec_config(FALSE, &IOmap) > 0 ){
+      std::cout<<"I am in loop"<<std::endl;
+      ec_configdc();
+      std::cout<<"success"<<std::endl;
+    }
+    while(EcatError) printf("%s", ec_elist2string());
+    printf("%d slaves found and configured.\n",ec_slavecount);
+    std::cout<<"there are "<<ec_slavecount<<" slaves"<<std::endl;
+  }
+  delete [] cstr;*/
+
+
+
+
 
   if(initSoem(ifname)){
     cycle_thread_ = boost::thread(cycleWorker, boost::ref(iomap_mutex_), boost::ref(stop_flag_));
@@ -124,9 +148,9 @@ EtherCatManager::EtherCatManager(const std::string &ifname)
 
 EtherCatManager::~EtherCatManager(){
   stop_flag_ = true;
-  ec_slave[0].state = EC_STATE_INIT;
-  ec_writestate(0);
-  ec_close();
+  ec_slave[0].state = EC_STATE_INIT; //requesting init operational state for all slaves
+  ec_writestate(0);//requesting init state for all slaves
+  ec_close();//stop SOEM, close socket
   cycle_thread_.join();
 }
 
@@ -152,6 +176,7 @@ void EtherCatManager::getStatus(int slave_no, std::string &name, int &eep_man, i
   activeports = ec_slave[slave_no].activeports;
   configadr = ec_slave[slave_no].configadr;
 }
+
 
 void EtherCatManager::write(int slave_no, uint8_t channel, uint8_t value){
   boost::mutex::scoped_lock lock(iomap_mutex_);
@@ -205,7 +230,9 @@ T EtherCatManager::readSDO(int slave_no, uint16_t index, uint8_t subidx) const{
 
 
 //doubt here
-#define IF_ELMO(_ec_slave) (((int)_ec_slave.eep_man == 0x066f) && ((((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0x5) || (((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0xD)))
+//#define IF_ELMO(_ec_slave) (((int)_ec_slave.eep_man == 0x066f) && ((((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0x5) || (((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0xD)))
+
+
 bool EtherCatManager::initSoem(const std::string &ifname){
   const static unsigned MAX_BUFF_SIZE = 1024;
   char buffer[MAX_BUFF_SIZE];
@@ -229,10 +256,8 @@ bool EtherCatManager::initSoem(const std::string &ifname){
 
   printf("SOEM found and configured %d slaves\n", ec_slavecount);
   for(int cnt =1; cnt<=ec_slavecount;cnt++){
-    printf("Man: %8.8x ID: %8.8x Rev: %8.8x %s\n",(int)ec_slave[cnt].eep_man, (int)ec_slave[cnt].eep_id, (int)ec_slave[cnt].eep_rev, IF_ELMO(ec_slave[cnt])?" ELMO Drivers":"");
-    if(IF_ELMO(ec_slave[cnt])){
-      num_clients_++;
-    }
+    printf("Man: %8.8x ID: %8.8x Rev: %8.8x \n",(int)ec_slave[cnt].eep_man, (int)ec_slave[cnt].eep_id, (int)ec_slave[cnt].eep_rev);
+    num_clients_++;
   }//doubt here
   printf("Found %d ELMO Drivers\n", num_clients_);
 
@@ -242,7 +267,6 @@ bool EtherCatManager::initSoem(const std::string &ifname){
   }
 
   for(int cnt = 1; cnt<=ec_slavecount;cnt++){
-    if(!IF_ELMO(ec_slave[cnt])) continue;
     int ret = 0, l;
     uint8_t num_entries;
     l = sizeof(num_entries);
@@ -260,7 +284,6 @@ bool EtherCatManager::initSoem(const std::string &ifname){
   }
 
   for( int cnt = 1 ; cnt <= ec_slavecount ; cnt++){
-    if(!IF_ELMO(ec_slave[cnt])) continue;
     int ret = 0, l;
     uint8_t num_pdo;
     ret += ec_SDOwrite(cnt, 0x1c12, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
@@ -305,7 +328,6 @@ bool EtherCatManager::initSoem(const std::string &ifname){
 
   ec_readstate();
   for(int cnt=1;cnt<=ec_slavecount;cnt++){
-    if(!IF_ELMO(ec_slave[cnt]))continue;
     printf("\nSlave:%d\n Name:%s\n Output size: %dbits\n Input size: %dbits\n State: %d\n Delay: %d[ns]\n Has DC: %d\n",
            cnt, ec_slave[cnt].name, ec_slave[cnt].Obits, ec_slave[cnt].Ibits,ec_slave[cnt].state, ec_slave[cnt].pdelay, ec_slave[cnt].hasdc);
     if (ec_slave[cnt].hasdc) printf(" DCParentport:%d\n", ec_slave[cnt].parentport);
@@ -317,7 +339,6 @@ bool EtherCatManager::initSoem(const std::string &ifname){
   }
 
   for(int cnt=1;cnt<=ec_slavecount;cnt++){
-    if(!IF_ELMO(ec_slave[cnt]))continue;
     int ret = 0, l;
     uint16_t sync_mode;
     uint32_t cycle_time;
@@ -355,7 +376,7 @@ template unsigned int EtherCatManager::readSDO<unsigned int> (int slave_no, uint
 template unsigned short EtherCatManager::readSDO<unsigned short> (int slave_no, uint16_t index, uint8_t subidx) const;
 template unsigned long EtherCatManager::readSDO<unsigned long> (int slave_no, uint16_t index, uint8_t subidx) const;
 
-}
+}//end of ethercat namespace
 
 
 

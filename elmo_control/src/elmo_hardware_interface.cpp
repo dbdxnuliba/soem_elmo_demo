@@ -25,7 +25,7 @@ EtherCATJointControlInterface::EtherCATJointControlInterface(ethercat::EtherCatM
            eep_man, eep_id, eep_rev, activeports, configadr);
   int operation_mode = 0x09; // Setting operation mode (we have to change here)
   client_ = new ElmoClient(*manager, slave_no);
-  ROS_INFO("Initialize EtherCATJoint (reset");
+  ROS_INFO("Initialize EtherCATJIoint (reset");
   client_->reset();
 
   ROS_INFO("Initialize EtherCATJoint (TorqueForEmergencyStop %d)",torque_for_emergency_stop);

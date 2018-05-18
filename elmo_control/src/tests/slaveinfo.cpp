@@ -1,7 +1,7 @@
 /**
  * \brief Example code for Simple Open EtherCAT master
  *
- * USage: slaveInfo [ifname]
+ * USage: a [ifname]
  * Ifname is the NIC interface, eth0
  *
  * Shows the configured slave data

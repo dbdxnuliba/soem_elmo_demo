@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(elmo_control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -149,9 +149,14 @@ target_link_libraries(reset ${catkin_LIBRARIES} elmo_client)
 add_executable(simple_example src/tests/simple_example.cpp)
 target_link_libraries(simple_example ${catkin_LIBRARIES} elmo_client)
 
+add_executable(example src/tests/example.cpp)
+target_link_libraries(example ${catkin_LIBRARIES} elmo_client)
+
 add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
 #add_dependencies(elmo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(elmo elmo_client ${catkin_LIBRARIES})
+
+
 
 
 ## Rename C++ executable without prefix
