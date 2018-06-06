@@ -34,7 +34,7 @@ void help(){
 
 int main(int argc, char *argv[]){
   int operation_mode = 0x01;
-  std::string ifname = "eth0";
+  std::string ifname = "enp2s0";
   printf("ELMO Simple test using SOEM (Simple Open EtherCAT master)\n");
   while(1){
     static struct option long_options[] = {
@@ -69,29 +69,36 @@ int main(int argc, char *argv[]){
       clients.push_back(new elmo_control::ElmoClient(manager, i+1));
     }
 
+    std::cout<<"There are: "<<manager.getNumClients()<<" of clinets"<<std::endl;
     for(std::vector<elmo_control::ElmoClient*>::iterator it = clients.begin();it!=clients.end();++it){
       elmo_control::ElmoClient* client = (*it);
+
       client->reset();
 
-      client->setTorqueForEmergencyStop(100);
-      client->setOverLoadLevel(50);
-      client->setOverSpeedLevel(120);
-      client->setMotorWorkingRange(0.1);
+      //client->setTorqueForEmergencyStop(100);
+      //client->setOverLoadLevel(50);
+      //client->setOverSpeedLevel(120);
+      //client->setMotorWorkingRange(0.1);
 
       client->servoOn();
 
       //get current velocity
-      elmo_control::ElmoInput input = client->readInputs();
-      int32 current_velocity = input.velocity_actual_value;
+      //elmo_control::ElmoInput input = client->readInputs();
+      //int32 current_velocity = input.velocity_actual_value;
+      //std::cout<<"current velocity is: "<<current_velocity<<std::endl;
 
       //set target velocity
-      elmo_control::ELmoOutput output;
+      /*elmo_control::ELmoOutput output;std::cout<<"target velocity: "<<output.target_velocity<<std::endl;
       memset(&output, 0x00, sizeof(elmo_control::ELmoOutput));
+
       if(operation_mode == 0x03){
+        std::cout<<"target: "<<current_velocity - 0x100000<<std::endl;
         output.target_velocity = (current_velocity>0)?(current_velocity - 0x100000):(current_velocity+0x100000);
+        std::cout<<"target velocity: "<<output.target_velocity<<std::endl;
       }
-      else
-        output.target_velocity = current_velocity;
+      else{
+        std::cout<<"In else here"<<std::endl;
+        output.target_velocity = current_velocity;}
 
       output.controlword = 0x001f;
       output.operation_mode = operation_mode;
@@ -103,9 +110,10 @@ int main(int argc, char *argv[]){
       }
       output.controlword &= ~0x0010; // clear new-set-point (bit4)
       client->writeOutputs(output);
-      printf("target velocity = %08x\n", output.target_velocity);
+      printf("target velocity = %08x\n", output.target_velocity);*/
     }
 
+    /*
     double period = 4e+6;
     struct timespec tick;
     clock_gettime(CLOCK_REALTIME, &tick);
@@ -154,14 +162,14 @@ int main(int argc, char *argv[]){
         fprintf(stderr, " overrun: %f", overrun_time);
       }
       clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
-    }
+    }*/
 
     for(std::vector<elmo_control::ElmoClient*>::iterator it = clients.begin(); it!=clients.end();++it){
       elmo_control::ElmoClient* client = (*it);
       elmo_control::ElmoInput input = client->readInputs();
-      client->printPDSStatus(input);
-      client->printPDSOperation(input);
-      client->servoOff();
+      //client->printPDSStatus(input);
+      //client->printPDSOperation(input);
+      //client->servoOff();
     }
 
   }catch(...){help();}

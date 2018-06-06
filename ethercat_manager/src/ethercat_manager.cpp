@@ -116,28 +116,6 @@ namespace ethercat {
 
 EtherCatManager::EtherCatManager(const std::string &ifname)
   :ifname_(ifname), num_clients_(0), stop_flag_(false){
-  /*
-  std::cout<<"The ifname is: "<<ifname<<std::endl;
-  char *cstr = new char[ifname.length()+1];
-  strcpy(cstr, ifname.c_str());
-  char IOmap[4096];
-  if (ec_init(cstr)){
-    printf("ec_init on %s succeeded.\n",cstr);
-    if ( ec_config(FALSE, &IOmap) > 0 ){
-      std::cout<<"I am in loop"<<std::endl;
-      ec_configdc();
-      std::cout<<"success"<<std::endl;
-    }
-    while(EcatError) printf("%s", ec_elist2string());
-    printf("%d slaves found and configured.\n",ec_slavecount);
-    std::cout<<"there are "<<ec_slavecount<<" slaves"<<std::endl;
-  }
-  delete [] cstr;*/
-
-
-
-
-
   if(initSoem(ifname)){
     cycle_thread_ = boost::thread(cycleWorker, boost::ref(iomap_mutex_), boost::ref(stop_flag_));
   }
@@ -180,6 +158,8 @@ void EtherCatManager::getStatus(int slave_no, std::string &name, int &eep_man, i
 
 void EtherCatManager::write(int slave_no, uint8_t channel, uint8_t value){
   boost::mutex::scoped_lock lock(iomap_mutex_);
+  //std::cout<<"I am writing"<<std::endl;
+  //std::cout<<ec_slave[slave_no].outputs[channel]<<" : "<<value<<std::endl;
   ec_slave[slave_no].outputs[channel] = value;
 }
 
@@ -266,7 +246,7 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     return false;
   }
 
-  for(int cnt = 1; cnt<=ec_slavecount;cnt++){
+  /*for(int cnt = 1; cnt<=ec_slavecount;cnt++){
     int ret = 0, l;
     uint8_t num_entries;
     l = sizeof(num_entries);
@@ -275,16 +255,23 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     num_entries = 0;
     ret +=ec_SDOwrite(cnt, 0x1603, 0x00, FALSE, sizeof(num_entries), &num_entries, EC_TIMEOUTRXM);
     uint32_t mapping;
-    mapping = 0x50B00020;
+    mapping = 0x60B10020;
     ret +=ec_SDOwrite(cnt, 0x1603, 0x09, FALSE, sizeof(mapping), &mapping, EC_TIMEOUTRXM);
     num_entries = 9;
     ret += ec_SDOwrite(cnt, 0x1603, 0x00, FALSE, sizeof(num_entries), &num_entries, EC_TIMEOUTRXM);
     ret += ec_SDOread(cnt, 0x1603, 0x00, FALSE, &l, &num_entries, EC_TIMEOUTRXM);
     printf("len = %d\n", num_entries);
-  }
+    /*int32 ob2;int os;
+    os=sizeof(ob2); ob2 = 0x16030001;
+    ec_SDOwrite(1,0x1c12,0,TRUE,os,&ob2,EC_TIMEOUTRXM);
+    os=sizeof(ob2); ob2 = 0x1a020000;
+    ec_SDOwrite(1,0x1c13,0, TRUE, os,&ob2,EC_TIMEOUTRXM);
+
+
+  }*/
 
   for( int cnt = 1 ; cnt <= ec_slavecount ; cnt++){
-    int ret = 0, l;
+    /*int ret = 0, l;
     uint8_t num_pdo;
     ret += ec_SDOwrite(cnt, 0x1c12, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
     uint16_t idx_rxpdo = 0x1603;
@@ -294,11 +281,41 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     printf("RxPDO mapping object index %d = %04x ret=%d\n", cnt, idx_rxpdo, ret);
     num_pdo = 0;
     ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
-    uint16_t idx_txpdo = 0x1a03;
+
+
+    uint16_t idx_txpdo = 0x1a01;
     ret += ec_SDOwrite(cnt, 0x1c13, 0x01, FALSE, sizeof(idx_txpdo), &idx_txpdo, EC_TIMEOUTRXM);
     num_pdo = 1;
-    ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
-    printf("TxPDO mapping object index %d = %04x ret=%d\n", cnt, idx_txpdo, ret);
+    ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);*/
+
+
+    int8 num_pdo;
+    int s = sizeof(num_pdo);
+    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+
+    ec_SDOread(cnt, 0x1c12, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+
+
+
+    int32 idx_rxpdo = 0x16020002;
+    //int32 idx_rxpdo = 0x16020001;
+    ec_SDOwrite(cnt,0x1c12,0,TRUE,sizeof(idx_rxpdo),&idx_rxpdo,EC_TIMEOUTRXM);
+
+    int32 idx_txpdo = 0x1a020003;
+    //int32 idx_txpdo = 0x1a020001;
+    ec_SDOwrite(cnt,0x1c13,0x00, TRUE, sizeof(idx_txpdo),&idx_txpdo,EC_TIMEOUTRXM);
+
+
+    uint32_t num_pdo2;
+    int s2 = sizeof(num_pdo2);
+    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x00, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
+
+    ec_SDOread(cnt, 0x1c12, 0x01, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
+    //printf("TxPDO mapping object index %d = %04x ret=%d\n", cnt, idx_txpdo, ret);
   }
   int iomap_size = ec_config_map(iomap_);
   printf("SOEM IOMap size: %d\n", iomap_size);

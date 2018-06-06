@@ -10,7 +10,7 @@ ElmoClient::ElmoClient(ethercat::EtherCatManager &manager, int slave_no)
   :manager_(manager), slave_no_(slave_no){}
 
 void ElmoClient::writeOutputs(const ELmoOutput &output){
-  uint8_t map[] ={0};
+  uint8_t map[7] ={0};
   map[0] = (output.controlword) & 0x00ff;
   map[1] = (output.controlword >> 8) & 0x00ff;
   map[2] = output.operation_mode;
@@ -18,18 +18,22 @@ void ElmoClient::writeOutputs(const ELmoOutput &output){
   map[4] = (output.target_velocity >> 8) & 0x00ff;
   map[5] = (output.target_velocity >> 16) & 0x00ff;
   map[6] = (output.target_velocity >> 24) & 0x00ff;
+  std::cout<<"Prepare to write outputs2:"<<output.controlword<<" : "<<output.operation_mode
+          <<std::endl;
   for(unsigned int i=0;i<7;++i)
     manager_.write(slave_no_, i, map[i]);
 }
 
 ElmoInput ElmoClient::readInputs() const{
+
   ElmoInput input;
   uint8_t map[27];
   for(unsigned int i=0;i<27;i++){
     map[i] = manager_.readInput(slave_no_, i);
+    //std::cout<<"readinbg unput"<<i<<std::endl;
   }
   input.statusword =             *(uint16 *)(map+0);
-  input.operation_mode = *(uint8 *)(map+2);
+  input.operation_mode =         *(uint8 *)(map+2);
   input.drivetemp =              *(uint16 *)(map+3);
   input.current_actual_value =   *(uint16 *)(map+5);
   input.position_actual_value=   *(uint32 *)(map+7);
@@ -38,6 +42,13 @@ ElmoInput ElmoClient::readInputs() const{
   input.dc_supply_5v =           *(uint16 *)(map+17);
   input.dc_link_circuit_voltage= *(uint32 *)(map+19);
   input.digital_input =          *(uint32 *)(map+23);
+
+  std::cout<<"input.statusword: "<<input.statusword<<std::endl;
+  std::cout<<"input.operation_mode: "<<input.operation_mode<<std::endl;
+  std::cout<<"input.position_actual_value: "<<input.position_actual_value<<std::endl;
+  std::cout<<"input.drivetemp: "<<input.drivetemp<<std::endl;
+  std::cout<<"input.velocity_actual_value: "<<input.velocity_actual_value<<std::endl;
+
   return input;
 }
 
@@ -55,34 +66,18 @@ ELmoOutput ElmoClient::readOutputs() const{
 
 void ElmoClient::reset(){
   ElmoInput input = readInputs();
+  std::cout<<"Client reset called"<<std::endl;
   ELmoOutput output;
   memset(&output, 0x00, sizeof(ELmoOutput));
   output.controlword = 0x0080;
   output.operation_mode = 0x01;
+  std::cout<<"Prepare to write outputs"<<output.controlword<<" : "<<output.operation_mode
+          <<std::endl;
+  printf("op mode: 0x%04x \n",output.operation_mode);
   writeOutputs(output);
 }
 
-PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
-  uint16 stausword = input.statusword;
-  if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
-    return NOT_READY;
-  else if(((stausword) & 0x004f) == 0x0040) //x1xx 0000
-    return SWITCH_DISABLED;
-  else if(((stausword) & 0x006f) == 0x0021) //x01x 0001
-    return READY_SWITCH;
-  else if(((stausword) & 0x006f) == 0x0023) //x01x 0011
-    return SWITCHED_ON;
-  else if(((stausword) & 0x006f) == 0x0027) //x01x 0111
-    return OPERATION_ENABLED;
-  else if(((stausword) & 0x006f) == 0x0007) //x00x 0111
-    return QUICK_STOP;
-  else if(((stausword) & 0x004f) == 0x000f) //x0xx 1111
-    return FAULT_REACTION;
-  else if(((stausword) & 0x004f) == 0x0008) //x0xx 1000
-    return FAULT;
-  else
-    return UNKNOWN;
-}
+
 
 PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
   uint8 operation_mode = input.operation_mode;
@@ -123,6 +118,30 @@ PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
 PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
   uint16 statusword = input.statusword;
 }
+
+PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
+  uint16 stausword = input.statusword;
+  if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
+    return NOT_READY;
+  else if(((stausword) & 0x004f) == 0x0040) //x1xx 0000
+    return SWITCH_DISABLED;
+  else if(((stausword) & 0x006f) == 0x0021) //x01x 0001
+    return READY_SWITCH;
+  else if(((stausword) & 0x006f) == 0x0023) //x01x 0011
+    return SWITCHED_ON;
+  else if(((stausword) & 0x006f) == 0x0027) //x01x 0111
+    return OPERATION_ENABLED;
+  else if(((stausword) & 0x006f) == 0x0007) //x00x 0111
+    return QUICK_STOP;
+  else if(((stausword) & 0x004f) == 0x000f) //x0xx 1111
+    return FAULT_REACTION;
+  else if(((stausword) & 0x004f) == 0x0008) //x0xx 1000
+    return FAULT;
+  else
+    return UNKNOWN;
+}
+
+
 
 void ElmoClient::printPDSStatus(const ElmoInput input) const{
   printf("StatusWord(6041h): %04x\n ",input.statusword);
@@ -200,6 +219,7 @@ void ElmoClient::printPDSOperation(const ElmoInput input) const{
 
 void ElmoClient::servoOn(){
   ElmoInput input = readInputs();
+  std::cout<<"Servo On called"<<std::endl;
   printPDSStatus(input);
   ELmoOutput output;
   memset(&output, 0x00, sizeof(ELmoOutput));
@@ -209,6 +229,7 @@ void ElmoClient::servoOn(){
     switch (getPDSStatus(input)) {
     case SWITCH_DISABLED:
       output.controlword = 0x0006; //move to ready to switch on
+      std::cout<<"moving to ready to switch on"<<std::endl;
       break;
     case READY_SWITCH:
       output.controlword = 0x0007; // move to switched on

@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   transmission_interface
 )
 
+find_package (Threads)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -149,8 +151,24 @@ target_link_libraries(reset ${catkin_LIBRARIES} elmo_client)
 add_executable(simple_example src/tests/simple_example.cpp)
 target_link_libraries(simple_example ${catkin_LIBRARIES} elmo_client)
 
+add_executable(simple_example2 src/tests/simple_example2.cpp)
+target_link_libraries(simple_example2 ${catkin_LIBRARIES} elmo_client)
+
 add_executable(example src/tests/example.cpp)
 target_link_libraries(example ${catkin_LIBRARIES} elmo_client)
+
+add_executable(example_position src/tests/example_position.cpp)
+target_link_libraries(example_position ${catkin_LIBRARIES} elmo_client)
+
+add_executable(example_position2 src/tests/example_position2.cpp)
+target_link_libraries(example_position2 ${catkin_LIBRARIES} elmo_client)
+
+add_executable(simple_test_torque src/tests/simple_test_torque.cpp)
+target_link_libraries(simple_test_torque ${catkin_LIBRARIES} elmo_client pthread)
+
+
+add_executable(simple_test_torque2 src/tests/simple_test_torque2.cpp)
+target_link_libraries(simple_test_torque2 ${catkin_LIBRARIES} elmo_client pthread)
 
 add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
 #add_dependencies(elmo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

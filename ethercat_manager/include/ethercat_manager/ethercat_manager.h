@@ -119,7 +119,7 @@ private:
   bool initSoem(const std::string& ifname);
 
   const std::string ifname_;
-  uint8_t iomap_[4096];
+  uint8_t iomap_[128];
   int num_clients_;
   boost::thread cycle_thread_;
   mutable boost::mutex iomap_mutex_;

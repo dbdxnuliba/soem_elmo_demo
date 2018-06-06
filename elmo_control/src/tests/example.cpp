@@ -59,7 +59,7 @@ void simpletest(char *ifname)
       {
         printf("Operational state reached for all slaves.\n");
         /* cyclic loop 10 times */
-        for(i = 1; i <= 10; i++)
+        for(i = 1; i <= 10000; i++)
         {
           ec_send_processdata();
           ec_receive_processdata(EC_TIMEOUTRET);
