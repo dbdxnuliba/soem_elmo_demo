@@ -191,23 +191,7 @@ template uint8_t readSDO<unsigned int> (int slave_no, uint16_t index, uint8_t su
 template uint8_t readSDO<unsigned short> (int slave_no, uint16_t index, uint8_t subidx, unsigned short value) ;
 template uint8_t readSDO<unsigned long> (int slave_no, uint16_t index, uint8_t subidx, unsigned long value) ;
 
-int moog_write8(uint16 slave, uint16 index, uint8 subindex, uint8 value){
-  int wkc;
-  wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value,EC_TIMEOUTRXM);
-  return wkc;
-}
 
-int moog_write16(uint16 slave, uint16 index, uint8 subindex, uint16 value){
-  int wkc;
-  wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value,EC_TIMEOUTRXM);
-  return wkc;
-}
-
-int moog_write32(uint16 slave, uint16 index, uint8 subindex, uint32 value){
-  int wkc;
-  wkc = ec_SDOwrite (slave, index, subindex, FALSE, sizeof(value), &value,EC_TIMEOUTRXM);
-  return wkc;
-}
 
 
 void simpletest(char *ifname)
@@ -249,65 +233,78 @@ void simpletest(char *ifname)
          /** set PDO mapping */
          /** opMode: 8  => Position profile */
          int wkc = 0;
-         wkc += moog_write8 (1, 0x1C12, 0, 0);
-         wkc += moog_write8 (1, 0x1C13, 0, 0);
+         int num_pdo = 0;
 
-         wkc += moog_write8  (1, 0x1A08, 0, 0);
+         //First setting 0 to both sync manager
+         wkc +=ec_SDOwrite(1,0x1C12,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1C13,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
-         /*
-         //int16 statusword = 0x60410010;
-         //ec_SDOwrite(1,0x1A08,1, TRUE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 1, 0x60410010);
-         //int8 mode_of_op_disp = 0x60610008;
-         //ec_SDOwrite(1,0x1A08,2, TRUE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 2, 0x60610008);
-         //int32 digital_inputs = 0x60FD0020;
-         //ec_SDOwrite(1,0x1A08,3, TRUE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 3, 0x60FD0020);
-         //int16 current_actual = 0x60780010;
-         //ec_SDOwrite(1,0x1A08,4, TRUE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 4, 0x60780010);
-         //int32 position_actual = 0x60640020;
-         //ec_SDOwrite(1,0x1A08,5, TRUE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 5, 0x60640020);
-         //int32 velocity_actual = 0x606C0020;
-         //ec_SDOwrite(1,0x1A08,6, TRUE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 6, 0x606C0020);
-         //int16 digital_supply = 0x22060010;
-         //ec_SDOwrite(1,0x1A08,7, TRUE, sizeof(digital_supply),&digital_supply,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 7, 0x22060010);
-         //int16 dc_link_voltage = 0x60790020;
-         //ec_SDOwrite(1,0x1A08,8, TRUE, sizeof(dc_link_voltage),&dc_link_voltage,EC_TIMEOUTRXM);
-         wkc += moog_write32 (1, 0x1A08, 8, 0x60790020);
+         //setting TPDO to 0
+         wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
-         wkc += moog_write8  (1, 0x1A08, 0, 8);*/
+         //1st entry: position actual
+         int32 position_actual = 0x60640020;
+         wkc +=ec_SDOwrite(1,0x1A08,1, TRUE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
 
+         //2nd entry: digital inputs
+         int32 digital_inputs = 0x60FD0020;
+         wkc +=ec_SDOwrite(1,0x1A08,2, TRUE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
 
-         wkc += moog_write32 (1, 0x1A08, 1, 0x60640020);
-         wkc += moog_write32 (1, 0x1A08, 2, 0x60FD0020);
-         wkc += moog_write32 (1, 0x1A08, 3, 0x606C0020);
-         wkc += moog_write32 (1, 0x1A08, 4, 0x60410010);
-         wkc += moog_write32 (1, 0x1A08, 5, 0x60610008);
-         wkc += moog_write32 (1, 0x1A08, 6, 0x60780010);
-         //wkc += moog_write32 (1, 0x1A08, 7, 0x22060010);
-         //wkc += moog_write32 (1, 0x1A08, 8, 0x60790020);
+         //3rd entry: velocity actual
+         int32 velocity_actual = 0x606C0020;
+         wkc +=ec_SDOwrite(1,0x1A08,3, TRUE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
 
-         wkc += moog_write8  (1, 0x1A08, 0, 6);
+         //4th entry: statusword
+         int32 statusword = 0x60410010;
+         wkc +=ec_SDOwrite(1,0x1A08,4, TRUE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
+
+         //5th entry: mode of operation display
+         int32 mode_of_op_disp = 0x60610008;
+         wkc +=ec_SDOwrite(1,0x1A08,5, TRUE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
+
+         //6th entry: current actual value
+         int32 current_actual = 0x60780010;
+         wkc +=ec_SDOwrite(1,0x1A08,6, TRUE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
+
+         //setting total number of entries
+         int t_num_of_entries = 6;
+         wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
 
 
-         wkc += moog_write8  (1, 0x1608, 0, 0);
-         wkc += moog_write32 (1, 0x1608, 1, 0x60400010);
-         wkc += moog_write32 (1, 0x1608, 2, 0x60600008);
-         wkc += moog_write32 (1, 0x1608, 3, 0x60FF0020);
-         wkc += moog_write8  (1, 0x1608, 0, 3);
+         //setting RPDO to 0
+         wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
-         wkc += moog_write16 (1, 0x1C12, 1, 0x1608);
-         wkc += moog_write16 (1, 0x1C12, 0, 1);
+         //1st entry: control word
+         int32 controlword = 0x60400010;
+         wkc +=ec_SDOwrite(1,0x1608,1, TRUE, sizeof(controlword),&controlword,EC_TIMEOUTRXM);
 
-         wkc += moog_write16 (1, 0x1C13, 1, 0x1A08);
-         wkc += moog_write16 (1, 0x1C13, 0, 1);
+         //2nd entry: model of operation
+         int32 mode_of_op = 0x60600008;
+         wkc +=ec_SDOwrite(1,0x1608,2, TRUE, sizeof(mode_of_op),&mode_of_op,EC_TIMEOUTRXM);
 
-         std::cout<<"WKC: "<<wkc<<std::endl;
+         //3rd entry: target velocity
+         int32 target_velocity = 0x60FF0020;
+         wkc +=ec_SDOwrite(1,0x1608,3, TRUE, sizeof(target_velocity),&target_velocity,EC_TIMEOUTRXM);
+
+         //setting total number of entries
+         int r_num_of_entries = 3;
+         wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(r_num_of_entries),&r_num_of_entries,EC_TIMEOUTRXM);
+
+         //Finally setting the mapping
+         int16 rxpdo = 0x1608;
+         wkc +=ec_SDOwrite(1,0x1C12,0x01, FALSE, sizeof(rxpdo),&rxpdo,EC_TIMEOUTRXM);
+
+         int16 txpdo = 0x1A08;
+         wkc +=ec_SDOwrite(1,0x1C13,0x01, FALSE, sizeof(txpdo),&txpdo,EC_TIMEOUTRXM);
+
+         //Setting number of rxpdo
+         int num_rpdo = 1;
+         wkc +=ec_SDOwrite(1,0x1C12,0x00, FALSE, sizeof(num_rpdo),&num_rpdo,EC_TIMEOUTRXM);
+
+         //Setting number of txpdo
+         int num_tpdo = 1;
+         wkc +=ec_SDOwrite(1,0x1C13,0x00, FALSE, sizeof(num_tpdo),&num_tpdo,EC_TIMEOUTRXM);
+
 
 
          /** if CA disable => automapping works */
@@ -467,7 +464,7 @@ void simpletest(char *ifname)
 
                         if((val.status & 0x0fff) == 0x0237 && reachedInitial){
                             //target->vel = (int16) (sin(i/1000.)*(10000));
-                            target.vel = 94770;
+                            target.vel = -94770;
                             std::cout<<"TARGET VELOCITY IS: "<<target.vel<<std::endl;
                              //writeOutputs(target);
 
