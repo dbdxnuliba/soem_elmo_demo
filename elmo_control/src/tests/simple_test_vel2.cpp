@@ -190,7 +190,7 @@ void simpletest(char *ifname)
     uint8 buf8;
 
     //struct VelIn *val;
-    struct VelOut *target;
+    //struct VelOut *target;
 
     int c = 0;
 
@@ -285,13 +285,7 @@ void simpletest(char *ifname)
          ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
          expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
          printf("Calculated workcounter %d\n", expectedWKC);
-         /** old SOEM code, inactive
-         oloop = ec_slave[0].Obytes;
-         if ((oloop == 0) && (ec_slave[0].Obits > 0)) oloop = 1;
-         if (oloop > 20) oloop = 8;
-         iloop = ec_slave[0].Ibytes;
-         if ((iloop == 0) && (ec_slave[0].Ibits > 0)) iloop = 1;
-         if (iloop > 20) iloop = 8;*/
+
 
          printf("segments : %d : %d %d %d %d\n",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
 
@@ -362,19 +356,16 @@ void simpletest(char *ifname)
             READ(0x1001, 0, buf8, "Error");
 
             /* cyclic loop */
-            //target = (struct VelOut *)(ec_slave[1].outputs);
-            //val = (struct VelIn *)(ec_slave[1].inputs);
-            //VelIn val = readInputs();
+            VelOut target;
+            target.control = 0x0080;
 
 
             //for(i = 1; i <= 100000; i++)
             while(1)
             {
-
-              target = (struct VelOut *)(ec_slave[1].outputs);
-              //VelOut target;
-              //target.control = 0x0080;
+              writeOutputs(target);
               VelIn val = readInputs();
+
                /** PDO I/O refresh */
                ec_send_processdata();
                wkc = ec_receive_processdata(EC_TIMEOUTRET);
@@ -386,23 +377,23 @@ void simpletest(char *ifname)
                         printf("  pos: 0x%x, digital input: 0x%x, vel: 0x%x, mode: 0x%x", val.position, val.digital_inputs, val.velocity, val.status);
 
                         /** if in fault or in the way to normal status, we update the state machine */
-                        switch(target->control){
+                        switch(target.control){
                         case 0:
-                            target->control = 6;
+                            target.control = 6;
                             break;
                         case 6:
-                            target->control = 7;
+                            target.control = 7;
                             break;
                         case 7:
-                            target->control = 15;
+                            target.control = 15;
                             break;
                         case 128:
-                            target->control = 0;
+                            target.control = 0;
                             break;
                         default:
                             if(val.status >> 3 & 0x01){
                                 READ(0x1001, 0, buf8, "Error");
-                                target->control = 128;
+                                target.control = 128;
                             }
 //                            break;
                         }
@@ -417,8 +408,8 @@ void simpletest(char *ifname)
 
                         if((val.status & 0x0fff) == 0x0237 && reachedInitial){
                             //target->vel = (int16) (sin(i/1000.)*(10000));
-                            target->vel = -94770;
-                            std::cout<<"TARGET VELOCITY IS: "<<target->vel<<std::endl;
+                            target.vel = 94770;
+                            std::cout<<"TARGET VELOCITY IS: "<<target.vel<<std::endl;
                              //writeOutputs(target);
 
                         }
@@ -429,7 +420,7 @@ void simpletest(char *ifname)
 
 
 
-                        printf("  Target: 0x%x, control: 0x%x", target->vel, target->control);
+                        printf("  Target: 0x%x, control: 0x%x", target.vel, target.control);
 
                         printf("\r");
                         needlf = TRUE;
