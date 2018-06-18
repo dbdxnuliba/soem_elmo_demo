@@ -185,6 +185,9 @@ target_link_libraries(simple_test_vel3 ${catkin_LIBRARIES} elmo_client pthread)
 add_executable(simple_test_vel4 src/tests/simple_test_vel4.cpp)
 target_link_libraries(simple_test_vel4 ${catkin_LIBRARIES} elmo_client pthread)
 
+add_executable(simple_test_vel5 src/tests/simple_test_vel5.cpp)
+target_link_libraries(simple_test_vel5 ${catkin_LIBRARIES} elmo_client pthread)
+
 add_executable(menu src/tests/menu.cpp)
 target_link_libraries(menu ${catkin_LIBRARIES} elmo_client pthread)
 
