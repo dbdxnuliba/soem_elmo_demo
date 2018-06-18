@@ -1,5 +1,5 @@
 /**
- *  (c) 2014, Manuel Vonthron - OPAL-RT Technologies, inc.
+ *  (c) 2018, Abhijit Makhal.
  */
 
 #include <stdio.h>
@@ -75,7 +75,6 @@ uint8_t writeSDO(int slave_no, uint16_t index, uint8_t subidx, T value){
 
 
 uint8_t readInput(int slave_no, uint8_t channel) {
-  //boost::mutex::scoped_lock lock(iomap_mutex_);
   if(slave_no > ec_slavecount){
     fprintf(stderr, "ERROR : slave_no(%d) is larger than ec_slavecount(%d)\n", slave_no, ec_slavecount);
     exit(1);
@@ -88,7 +87,6 @@ uint8_t readInput(int slave_no, uint8_t channel) {
 }
 
 uint8_t readOutput(int slave_no, uint8_t channel) {
-  //boost::mutex::scoped_lock lock(iomap_mutex_);
   if(slave_no > ec_slavecount){
     fprintf(stderr, "ERROR : slave_no(%d) is larger than ec_slavecount(%d)\n", slave_no, ec_slavecount);
     exit(1);
@@ -117,7 +115,6 @@ VelIn readInputs(){
 }
 
 void write(int slave_no, uint8_t channel, uint8_t value){
-  //boost::mutex::scoped_lock lock(iomap_mutex_);
   ec_slave[slave_no].outputs[channel] = value;
 }
 
@@ -190,7 +187,6 @@ void simpletest(char *ifname)
          ec_statecheck(0, EC_STATE_PRE_OP,  EC_TIMEOUTSTATE);
 
          /** set PDO mapping */
-         /** opMode: 8  => Position profile */
          int wkc = 0;
          int num_pdo = 0;
 
@@ -269,22 +265,10 @@ void simpletest(char *ifname)
          /** if CA disable => automapping works */
          ec_config_map(&IOmap);
 
-         /** let DC off for the time being */
-//         ec_configdc();
-
-
          printf("\nSlave:%d\n Name:%s\n Output size: %dbits\n Input size: %dbits\n State: %d\n Delay: %d[ns]\n Has DC: %d\n",
                1, ec_slave[1].name, ec_slave[1].Obits, ec_slave[1].Ibits,
                ec_slave[1].state, ec_slave[1].pdelay, ec_slave[1].hasdc);
 
-
-         /** disable heartbeat alarm */
-         //READ(0x10F1, 2, buf32, "Heartbeat?");
-         //WRITE(0x10F1, 2, buf32, 1, "Heartbeat");
-
-
-         //WRITE(0x60c2, 1, buf8, 2, "Time period");
-         //WRITE(0x2f75, 0, buf16, 1, "Interpolation timeout");
 
          printf("Slaves mapped, state to SAFE_OP.\n");
 
@@ -307,11 +291,6 @@ void simpletest(char *ifname)
          /* send one valid process data to make outputs in slaves happy*/
          ec_send_processdata();
          ec_receive_processdata(EC_TIMEOUTRET);
-
-
-         //READ(0x6083, 0, buf32, "Profile acceleration");
-         //READ(0x6084, 0, buf32, "Profile deceleration");
-         //READ(0x6085, 0, buf32, "Quick stop deceleration");
 
          /* request OP state for all slaves */
          ec_writestate(0);
@@ -392,7 +371,7 @@ void simpletest(char *ifname)
 
                         if((val.status & 0x0fff) == 0x0237 && reachedInitial){
                             //target->vel = (int16) (sin(i/1000.)*(10000));
-                            target.vel = -94770;
+                            target.vel = 94770;
 
                        }
 
@@ -440,81 +419,6 @@ void simpletest(char *ifname)
     }
 }
 
-void ecatcheck( void *ptr )
-{
-    int slave;
-
-    while(1)
-    {
-        if( inOP && ((wkc < expectedWKC) || ec_group[currentgroup].docheckstate))
-        {
-            if (needlf)
-            {
-               needlf = FALSE;
-               printf("\n");
-            }
-            /* one ore more slaves are not responding */
-            ec_group[currentgroup].docheckstate = FALSE;
-            ec_readstate();
-            for (slave = 1; slave <= ec_slavecount; slave++)
-            {
-               if ((ec_slave[slave].group == currentgroup) && (ec_slave[slave].state != EC_STATE_OPERATIONAL))
-               {
-                  ec_group[currentgroup].docheckstate = TRUE;
-                  if (ec_slave[slave].state == (EC_STATE_SAFE_OP + EC_STATE_ERROR))
-                  {
-                     printf("ERROR : slave %d is in SAFE_OP + ERROR, attempting ack.\n", slave);
-                     ec_slave[slave].state = (EC_STATE_SAFE_OP + EC_STATE_ACK);
-                     ec_writestate(slave);
-                  }
-                  else if(ec_slave[slave].state == EC_STATE_SAFE_OP)
-                  {
-                     printf("WARNING : slave %d is in SAFE_OP, change to OPERATIONAL.\n", slave);
-                     ec_slave[slave].state = EC_STATE_OPERATIONAL;
-                     ec_writestate(slave);
-                  }
-                  else if(ec_slave[slave].state > 0)
-                  {
-                     if (ec_reconfig_slave(slave, EC_TIMEOUTMON))
-                     {
-                        ec_slave[slave].islost = FALSE;
-                        printf("MESSAGE : slave %d reconfigured\n",slave);
-                     }
-                  }
-                  else if(!ec_slave[slave].islost)
-                  {
-                     /* re-check state */
-                     ec_statecheck(slave, EC_STATE_OPERATIONAL, EC_TIMEOUTRET);
-                     if (!ec_slave[slave].state)
-                     {
-                        ec_slave[slave].islost = TRUE;
-                        printf("ERROR : slave %d lost\n",slave);
-                     }
-                  }
-               }
-               if (ec_slave[slave].islost)
-               {
-                  if(!ec_slave[slave].state)
-                  {
-                     if (ec_recover_slave(slave, EC_TIMEOUTMON))
-                     {
-                        ec_slave[slave].islost = FALSE;
-                        printf("MESSAGE : slave %d recovered\n",slave);
-                     }
-                  }
-                  else
-                  {
-                     ec_slave[slave].islost = FALSE;
-                     printf("MESSAGE : slave %d found\n",slave);
-                  }
-               }
-            }
-            if(!ec_group[currentgroup].docheckstate)
-               printf(".");
-        }
-        usleep(250);
-    }
-}
 
 int main(int argc, char *argv[])
 {
@@ -524,7 +428,6 @@ int main(int argc, char *argv[])
    if (argc > 1)
    {
       /* create thread to handle slave error handling in OP */
-      //iret1 = pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
       /* start cyclic part */
       simpletest(argv[1]);
    }
