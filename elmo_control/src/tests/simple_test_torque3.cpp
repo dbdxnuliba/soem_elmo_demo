@@ -33,21 +33,15 @@ volatile int wkc;
 boolean inOP;
 uint8 currentgroup = 0;
 
-struct VelOut {
-    int8 modes_of_operation;
-    int32 target_vel;
-    uint16 controlword;
-    //uint16 torque;
-    //uint16 control;
+struct TorqueOut {
+    uint32 vel;
+    uint16 control;
 };
-struct VelIn {
+struct TorqueIn {
     int32 position;
-    uint32 digital_inputs;
+    int32 digital_inputs;
     int32 velocity;
-    uint16 statusword;
-    //int32 position;
-    //int16 torque;
-    //uint16 status;
+    uint16 status;
     //int8 profile;
 };
 
@@ -87,8 +81,8 @@ void simpletest(char *ifname)
     uint16 buf16;
     uint8 buf8;
 
-    struct VelIn *val;
-    struct VelOut *target;
+    struct TorqueIn *val;
+    struct TorqueOut *target;
 
    printf("Starting simple test\n");
 
@@ -112,7 +106,7 @@ void simpletest(char *ifname)
 
          /** set PDO mapping */
          /** opMode: 8  => Position profile */
-         WRITE(0x6060, 0, buf8, 8, "OpMode");
+         WRITE(0x6060, 0, buf8, 9, "OpMode");
          READ(0x6061, 0, buf8, "OpMode display");
 
 
@@ -126,7 +120,7 @@ void simpletest(char *ifname)
 //         WRITE(0x1c13, 1, buf16, 0x1A01, "txPDO");
 
         int32 ob2;int os;
-         os=sizeof(ob2); ob2 = 0x160B0002;
+         os=sizeof(ob2); ob2 = 0x16010001;
          ec_SDOwrite(1,0x1c12,0,TRUE,os,&ob2,EC_TIMEOUTRXM);
          os=sizeof(ob2); ob2 = 0x1a030001;
          ec_SDOwrite(1,0x1c13,0, TRUE, os,&ob2,EC_TIMEOUTRXM);
@@ -167,7 +161,8 @@ void simpletest(char *ifname)
 
          /* wait for all slaves to reach SAFE_OP state */
          ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
-
+         expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
+         printf("Calculated workcounter %d\n", expectedWKC);
          /** old SOEM code, inactive */
          oloop = ec_slave[0].Obytes;
          if ((oloop == 0) && (ec_slave[0].Obits > 0)) oloop = 1;
@@ -223,39 +218,30 @@ void simpletest(char *ifname)
 
             WRITE(0x6040, 0, buf16, 0, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
 
             WRITE(0x6040, 0, buf16, 6, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
-
 
             WRITE(0x6040, 0, buf16, 7, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
 
-            //WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
-            //READ(0x6041, 0, buf16, "*status word*");
-            //std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
+            WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
+            READ(0x6041, 0, buf16, "*status word*");
 
+   CHECKERROR();
+            READ(0x1a0b, 0, buf8, "OpMode Display");
 
-
-
-            //WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
-            //READ(0x6041, 0, buf16, "*status word*");
-            //std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
-
-   //CHECKERROR();
-            //READ(0x1a0b, 0, buf8, "OpMode Display");
+            READ(0x6061, 0, buf16, "*Mode of Operation*");
+            std::cout<<"Mode of Operation now: : "<<(buf16 & 0x006f)<<std::endl;
 
 
             int reachedInitial = 0;
 
-            //READ(0x1001, 0, buf8, "Error");
+            READ(0x1001, 0, buf8, "Error");
 
             /* cyclic loop */
-            target = (struct VelOut *)(ec_slave[1].outputs);
-            val = (struct VelIn *)(ec_slave[1].inputs);
+            target = (struct TorqueOut *)(ec_slave[1].outputs);
+            val = (struct TorqueIn *)(ec_slave[1].inputs);
 
 
             for(i = 1; i <= 100000; i++)
@@ -267,82 +253,41 @@ void simpletest(char *ifname)
                     if(wkc >= expectedWKC)
                     {
                         printf("Processdata cycle %4d, WKC %d,", i, wkc);
-                        printf("pos: 0x%x, dig_input: 0x%x, vel: 0x%x, staus: 0x%x  ",val->position, val->digital_inputs, val->velocity, val->statusword);
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW: "<<(buf16 & 0x006f)<<std::endl;
-
-                        //printf("  pos: 0x%x, tor: 0x%x, stat: 0x%x, mode: 0x%x", val->position, val->torque, val->status, val->profile);
-                        //std::cout<<"Status: "<<(val->status & 0x006f)<<std::endl;
+                        printf("  pos: 0x%x, tor: 0x%x, stat: 0x%x, mode: 0x%x", val->position, val->digital_inputs, val->velocity, val->status);
 
                         /** if in fault or in the way to normal status, we update the state machine */
-                        /*switch(target->controlword){
+                        switch(target->control){
                         case 0:
-                            target->controlword = 1;
+                            target->control = 6;
                             break;
-                        case 1:
-                            target->controlword = 2;
+                        case 6:
+                            target->control = 7;
                             break;
-                        case 2:
-                            target->controlword = 3;
-                            break;
-                        case 3:
-                            target->controlword = 4;
+                        case 7:
+                            target->control = 15;
                             break;
                         case 128:
-                            target->controlword = 0;
+                            target->control = 0;
                             break;
                         default:
-                            if(val->statusword >> 3 & 0x01){
+                            if(val->status >> 3 & 0x01){
                                 READ(0x1001, 0, buf8, "Error");
-                                target->controlword = 128;
+                                target->control = 128;
                             }
 //                            break;
-                        }*/
-
-                        //std::cout<<"target->controlword: "<<target->controlword<<std::endl;
-                        //if ((val->statusword & 0x006f) == 0x40){
-                          //std::cout<<"We are in switch on disabled mode"<<std::endl;
-                          //target->controlword = 2;
-                        //}
-
-                        if ((val->statusword & 0x006f) == 0x21){
-                          std::cout<<"We are in ready to switch on mode"<<std::endl;
                         }
-
-                        if ((val->statusword & 0x006f) == 0x23){
-                          std::cout<<"We are in switch on mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x27){
-                          std::cout<<"We are in OP ENABLED mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x07){
-                          std::cout<<"We are in quick stop mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x08){
-                          std::cout<<"We are in falut mode"<<std::endl;
-
-                        }
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW after all the ifs: "<<(buf16 & 0x006f)<<std::endl;
-
 
 
                         /** we wait to be in ready-to-run mode and with initial value reached */
-                        if(reachedInitial == 0 /*&& val->position == INITIAL_POS */&& (val->statusword & 0x0fff) == 0x0237){
+                        if(reachedInitial == 0 /*&& val->position == INITIAL_POS */&& (val->status & 0x0fff) == 0x0237){
                             reachedInitial = 1;
                         }
 
-                        if((val->statusword & 0x0fff) == 0x0237 && reachedInitial){
-                            target->target_vel = (int16) (sin(i/100.)*(1000));
+                        if((val->status & 0x0fff) == 0x0237 && reachedInitial){
+                            target->vel = (int16) (sin(i/100.)*(10000));
                         }
 
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW after all the ifs: "<<(buf16 & 0x006f)<<std::endl;
-
-                        //printf("  Target: 0x%x, control: 0x%x \n", target->target_vel, target->controlword);
+                        printf("  Target: 0x%x, control: 0x%x", target->vel, target->control);
 
                         printf("\r");
                         needlf = TRUE;

@@ -170,6 +170,18 @@ target_link_libraries(simple_test_torque ${catkin_LIBRARIES} elmo_client pthread
 add_executable(simple_test_torque2 src/tests/simple_test_torque2.cpp)
 target_link_libraries(simple_test_torque2 ${catkin_LIBRARIES} elmo_client pthread)
 
+add_executable(simple_test_torque3 src/tests/simple_test_torque3.cpp)
+target_link_libraries(simple_test_torque3 ${catkin_LIBRARIES} elmo_client pthread)
+
+add_executable(simple_test_vel src/tests/simple_test_vel.cpp)
+target_link_libraries(simple_test_vel ${catkin_LIBRARIES} elmo_client pthread)
+
+add_executable(simple_test_vel2 src/tests/simple_test_vel2.cpp)
+target_link_libraries(simple_test_vel2 ${catkin_LIBRARIES} elmo_client pthread)
+
+add_executable(menu src/tests/menu.cpp)
+target_link_libraries(menu ${catkin_LIBRARIES} elmo_client pthread)
+
 add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
 #add_dependencies(elmo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(elmo elmo_client ${catkin_LIBRARIES})

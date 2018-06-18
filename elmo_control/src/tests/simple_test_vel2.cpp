@@ -10,6 +10,8 @@
 
 #include <math.h>
 #include <iostream>
+#include <curses.h>
+
 
 #include "ethercattype.h"
 #include "nicdrv.h"
@@ -34,22 +36,19 @@ boolean inOP;
 uint8 currentgroup = 0;
 
 struct VelOut {
-    int8 modes_of_operation;
-    int32 target_vel;
-    uint16 controlword;
-    //uint16 torque;
-    //uint16 control;
+    uint32 vel;
+    uint16 control;
 };
 struct VelIn {
     int32 position;
-    uint32 digital_inputs;
+    int32 digital_inputs;
     int32 velocity;
-    uint16 statusword;
-    //int32 position;
-    //int16 torque;
-    //uint16 status;
+    uint16 status;
     //int8 profile;
 };
+
+#define KEY_A 97
+#define KEY_D 100
 
 /**
  * helper macros
@@ -76,6 +75,109 @@ struct VelIn {
     printf("EC> \"%s\" %x - %x [%s] \n", (char*)ec_elist2string(), ec_slave[1].state, ec_slave[1].ALstatuscode, (char*)ec_ALstatuscode2string(ec_slave[1].ALstatuscode));    \
 }
 
+template<typename T>
+uint8_t readSDO(int slave_no, uint16_t index, uint8_t subidx, T value){
+  int ret, l;
+  //T val;
+  l = sizeof(value);
+  ret = ec_SDOread(slave_no, index, subidx, FALSE, &l, &value, EC_TIMEOUTRXM);
+  if(ret <= 0){
+    fprintf(stderr, "Failed to read from ret:%d, slave_no:%d, index:0x%04x, subidx:0x%02x\n", ret, slave_no, index, subidx);
+  }
+  return ret;
+}
+
+template<typename T>
+uint8_t writeSDO(int slave_no, uint16_t index, uint8_t subidx, T value){
+  int ret;
+  ret = ec_SDOwrite(slave_no, index, subidx, FALSE, sizeof(value), &value, EC_TIMEOUTSAFE);
+  return ret;
+}
+
+
+
+uint8_t readInput(int slave_no, uint8_t channel) {
+  //boost::mutex::scoped_lock lock(iomap_mutex_);
+  if(slave_no > ec_slavecount){
+    fprintf(stderr, "ERROR : slave_no(%d) is larger than ec_slavecount(%d)\n", slave_no, ec_slavecount);
+    exit(1);
+  }
+  if(channel * 8 >= ec_slave[slave_no].Ibits){
+    fprintf(stderr, "ERROR : channel(%d) is larger than Input bits (%d)\n", channel * 8, ec_slave[slave_no].Ibits);
+    exit(1);
+  }
+  return ec_slave[slave_no].inputs[channel];
+}
+
+uint8_t readOutput(int slave_no, uint8_t channel) {
+  //boost::mutex::scoped_lock lock(iomap_mutex_);
+  if(slave_no > ec_slavecount){
+    fprintf(stderr, "ERROR : slave_no(%d) is larger than ec_slavecount(%d)\n", slave_no, ec_slavecount);
+    exit(1);
+  }
+  if(channel * 8 >= ec_slave[slave_no].Obits){
+    fprintf(stderr, "ERROR : channel(%d) is larger than Output bits (%d)\n", channel * 8, ec_slave[slave_no].Obits);
+    exit(1);
+  }
+  return ec_slave[slave_no].outputs[channel];
+}
+
+VelIn readInputs(){
+  VelIn input;
+  uint8_t map[14];
+  for(unsigned int i=0;i<14;i++){
+    map[i] = readInput(1, i);
+  }
+  input.position = *(uint32 *)(map+0);
+  input.digital_inputs = *(uint32 *)(map+4);
+  input.velocity = *(uint32 *)(map+8);
+  input.status = *(uint16 *)(map+12);
+
+  return input;
+}
+
+void write(int slave_no, uint8_t channel, uint8_t value){
+  //boost::mutex::scoped_lock lock(iomap_mutex_);
+  ec_slave[slave_no].outputs[channel] = value;
+}
+
+void writeOutputs(const VelOut &output){
+  uint8_t map[6] = {0};
+  map[0] = (output.vel) & 0x00ff;
+  map[1] = (output.vel >> 8) & 0x00ff;
+  map[2] = (output.vel >> 16) & 0x00ff;
+  map[3] = (output.vel >> 24) & 0x00ff;
+  map[4] = (output.control) & 0x00ff;
+  map[5] = (output.control >> 8) & 0x00ff;
+
+  for(unsigned int i=0;i<6;i++)
+    write(1, i, map[i]);
+}
+
+
+
+
+
+template uint8_t writeSDO<char> (int slave_no, uint16_t index, uint8_t subidx, char value);
+template uint8_t writeSDO<int> (int slave_no, uint16_t index, uint8_t subidx, int value);
+template uint8_t writeSDO<short> (int slave_no, uint16_t index, uint8_t subidx, short value);
+template uint8_t writeSDO<long> (int slave_no, uint16_t index, uint8_t subidx, long value);
+template uint8_t writeSDO<unsigned char> (int slave_no, uint16_t index, uint8_t subidx, unsigned char value);
+template uint8_t writeSDO<unsigned int> (int slave_no, uint16_t index, uint8_t subidx, unsigned int value);
+template uint8_t writeSDO<unsigned short> (int slave_no, uint16_t index, uint8_t subidx, unsigned short value);
+template uint8_t writeSDO<unsigned long> (int slave_no, uint16_t index, uint8_t subidx, unsigned long value);
+
+template uint8_t readSDO<char> (int slave_no, uint16_t index, uint8_t subidx, char value) ;
+template uint8_t readSDO<int> (int slave_no, uint16_t index, uint8_t subidx, int value) ;
+template uint8_t readSDO<short> (int slave_no, uint16_t index, uint8_t subidx, short value);
+template uint8_t readSDO<long> (int slave_no, uint16_t index, uint8_t subidx, long value);
+template uint8_t readSDO<unsigned char> (int slave_no, uint16_t index, uint8_t subidx, unsigned char value);
+template uint8_t readSDO<unsigned int> (int slave_no, uint16_t index, uint8_t subidx, unsigned int value) ;
+template uint8_t readSDO<unsigned short> (int slave_no, uint16_t index, uint8_t subidx, unsigned short value) ;
+template uint8_t readSDO<unsigned long> (int slave_no, uint16_t index, uint8_t subidx, unsigned long value) ;
+
+
+
 
 void simpletest(char *ifname)
 {
@@ -87,8 +189,11 @@ void simpletest(char *ifname)
     uint16 buf16;
     uint8 buf8;
 
-    struct VelIn *val;
+    //struct VelIn *val;
     struct VelOut *target;
+
+    int c = 0;
+
 
    printf("Starting simple test\n");
 
@@ -112,8 +217,17 @@ void simpletest(char *ifname)
 
          /** set PDO mapping */
          /** opMode: 8  => Position profile */
-         WRITE(0x6060, 0, buf8, 8, "OpMode");
-         READ(0x6061, 0, buf8, "OpMode display");
+         //WRITE(0x6060, 0, buf8, 9, "OpMode");
+         uint8_t buf8_opmode;
+         int l = sizeof(buf8_opmode);
+         writeSDO(1, 0x6060, 0, 9);
+         //ec_SDOread(1, 0x6061, 0x00, FALSE, &l, &buf8_opmode, EC_TIMEOUTRXM);
+
+         readSDO(1, 0x6061, 0x00, buf8_opmode);
+
+         //std::cout<<"The opmode display is: "<<buf8_opmode<<std::endl;
+
+         //READ(0x6061, 0, buf8, "OpMode display");
 
 
          READ(0x1c12, 0, buf32, "rxPDO:0");
@@ -126,10 +240,12 @@ void simpletest(char *ifname)
 //         WRITE(0x1c13, 1, buf16, 0x1A01, "txPDO");
 
         int32 ob2;int os;
-         os=sizeof(ob2); ob2 = 0x160B0002;
+         os=sizeof(ob2); ob2 = 0x16010001;
          ec_SDOwrite(1,0x1c12,0,TRUE,os,&ob2,EC_TIMEOUTRXM);
+         //writeSDO(1, 0x1c12, 0, ob2);
          os=sizeof(ob2); ob2 = 0x1a030001;
          ec_SDOwrite(1,0x1c13,0, TRUE, os,&ob2,EC_TIMEOUTRXM);
+         //writeSDO(1, 0x1c13, 0, ob2);
 
 //         WRITE(0x1c12, 0, buf32, 0x16010001, "rxPDO");
 //         WRITE(0x1c13, 0, buf32, 0x1A010001, "txPDO");
@@ -154,12 +270,12 @@ void simpletest(char *ifname)
 
 
          /** disable heartbeat alarm */
-         READ(0x10F1, 2, buf32, "Heartbeat?");
-         WRITE(0x10F1, 2, buf32, 1, "Heartbeat");
+         //READ(0x10F1, 2, buf32, "Heartbeat?");
+         //WRITE(0x10F1, 2, buf32, 1, "Heartbeat");
 
 
-         WRITE(0x60c2, 1, buf8, 2, "Time period");
-         WRITE(0x2f75, 0, buf16, 2, "Interpolation timeout");
+         //WRITE(0x60c2, 1, buf8, 2, "Time period");
+         //WRITE(0x2f75, 0, buf16, 1, "Interpolation timeout");
 
          printf("Slaves mapped, state to SAFE_OP.\n");
 
@@ -167,14 +283,15 @@ void simpletest(char *ifname)
 
          /* wait for all slaves to reach SAFE_OP state */
          ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
-
-         /** old SOEM code, inactive */
+         expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
+         printf("Calculated workcounter %d\n", expectedWKC);
+         /** old SOEM code, inactive
          oloop = ec_slave[0].Obytes;
          if ((oloop == 0) && (ec_slave[0].Obits > 0)) oloop = 1;
          if (oloop > 20) oloop = 8;
          iloop = ec_slave[0].Ibytes;
          if ((iloop == 0) && (ec_slave[0].Ibits > 0)) iloop = 1;
-         if (iloop > 20) iloop = 8;
+         if (iloop > 20) iloop = 8;*/
 
          printf("segments : %d : %d %d %d %d\n",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
 
@@ -223,43 +340,41 @@ void simpletest(char *ifname)
 
             WRITE(0x6040, 0, buf16, 0, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
 
             WRITE(0x6040, 0, buf16, 6, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
-
 
             WRITE(0x6040, 0, buf16, 7, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
-            std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
 
-            //WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
-            //READ(0x6041, 0, buf16, "*status word*");
-            //std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
+            WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
+            READ(0x6041, 0, buf16, "*status word*");
 
+   CHECKERROR();
+            READ(0x1a0b, 0, buf8, "OpMode Display");
 
-
-
-            //WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
-            //READ(0x6041, 0, buf16, "*status word*");
-            //std::cout<<"Status: "<<(buf16 & 0x006f)<<std::endl;
-
-   //CHECKERROR();
-            //READ(0x1a0b, 0, buf8, "OpMode Display");
+            READ(0x6061, 0, buf16, "*Mode of Operation*");
+            std::cout<<"Mode of Operation now: : "<<(buf16 & 0x006f)<<std::endl;
 
 
             int reachedInitial = 0;
 
-            //READ(0x1001, 0, buf8, "Error");
+            READ(0x1001, 0, buf8, "Error");
 
             /* cyclic loop */
-            target = (struct VelOut *)(ec_slave[1].outputs);
-            val = (struct VelIn *)(ec_slave[1].inputs);
+            //target = (struct VelOut *)(ec_slave[1].outputs);
+            //val = (struct VelIn *)(ec_slave[1].inputs);
+            //VelIn val = readInputs();
 
 
-            for(i = 1; i <= 100000; i++)
+            //for(i = 1; i <= 100000; i++)
+            while(1)
             {
+
+              target = (struct VelOut *)(ec_slave[1].outputs);
+              //VelOut target;
+              //target.control = 0x0080;
+              VelIn val = readInputs();
                /** PDO I/O refresh */
                ec_send_processdata();
                wkc = ec_receive_processdata(EC_TIMEOUTRET);
@@ -267,82 +382,54 @@ void simpletest(char *ifname)
                     if(wkc >= expectedWKC)
                     {
                         printf("Processdata cycle %4d, WKC %d,", i, wkc);
-                        printf("pos: 0x%x, dig_input: 0x%x, vel: 0x%x, staus: 0x%x  ",val->position, val->digital_inputs, val->velocity, val->statusword);
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW: "<<(buf16 & 0x006f)<<std::endl;
-
-                        //printf("  pos: 0x%x, tor: 0x%x, stat: 0x%x, mode: 0x%x", val->position, val->torque, val->status, val->profile);
-                        //std::cout<<"Status: "<<(val->status & 0x006f)<<std::endl;
+                        //printf("  pos: 0x%x, tor: 0x%x, stat: 0x%x, mode: 0x%x", val->position, val->digital_inputs, val->velocity, val->status);
+                        printf("  pos: 0x%x, digital input: 0x%x, vel: 0x%x, mode: 0x%x", val.position, val.digital_inputs, val.velocity, val.status);
 
                         /** if in fault or in the way to normal status, we update the state machine */
-                        /*switch(target->controlword){
+                        switch(target->control){
                         case 0:
-                            target->controlword = 1;
+                            target->control = 6;
                             break;
-                        case 1:
-                            target->controlword = 2;
+                        case 6:
+                            target->control = 7;
                             break;
-                        case 2:
-                            target->controlword = 3;
-                            break;
-                        case 3:
-                            target->controlword = 4;
+                        case 7:
+                            target->control = 15;
                             break;
                         case 128:
-                            target->controlword = 0;
+                            target->control = 0;
                             break;
                         default:
-                            if(val->statusword >> 3 & 0x01){
+                            if(val.status >> 3 & 0x01){
                                 READ(0x1001, 0, buf8, "Error");
-                                target->controlword = 128;
+                                target->control = 128;
                             }
 //                            break;
-                        }*/
-
-                        //std::cout<<"target->controlword: "<<target->controlword<<std::endl;
-                        //if ((val->statusword & 0x006f) == 0x40){
-                          //std::cout<<"We are in switch on disabled mode"<<std::endl;
-                          //target->controlword = 2;
-                        //}
-
-                        if ((val->statusword & 0x006f) == 0x21){
-                          std::cout<<"We are in ready to switch on mode"<<std::endl;
                         }
-
-                        if ((val->statusword & 0x006f) == 0x23){
-                          std::cout<<"We are in switch on mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x27){
-                          std::cout<<"We are in OP ENABLED mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x07){
-                          std::cout<<"We are in quick stop mode"<<std::endl;
-                        }
-
-                        if ((val->statusword & 0x006f) == 0x08){
-                          std::cout<<"We are in falut mode"<<std::endl;
-
-                        }
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW after all the ifs: "<<(buf16 & 0x006f)<<std::endl;
-
 
 
                         /** we wait to be in ready-to-run mode and with initial value reached */
-                        if(reachedInitial == 0 /*&& val->position == INITIAL_POS */&& (val->statusword & 0x0fff) == 0x0237){
+                        if(reachedInitial == 0 /*&& val->position == INITIAL_POS */&& (val.status & 0x0fff) == 0x0237){
                             reachedInitial = 1;
                         }
 
-                        if((val->statusword & 0x0fff) == 0x0237 && reachedInitial){
-                            target->target_vel = (int16) (sin(i/100.)*(1000));
+
+
+                        if((val.status & 0x0fff) == 0x0237 && reachedInitial){
+                            //target->vel = (int16) (sin(i/1000.)*(10000));
+                            target->vel = -94770;
+                            std::cout<<"TARGET VELOCITY IS: "<<target->vel<<std::endl;
+                             //writeOutputs(target);
+
                         }
 
-                        //READ(0x6041, 0, buf16, "*status word*");
-                        //std::cout<<"Status NOW after all the ifs: "<<(buf16 & 0x006f)<<std::endl;
 
-                        //printf("  Target: 0x%x, control: 0x%x \n", target->target_vel, target->controlword);
+                        //usleep(100000);
+
+
+
+
+                        printf("  Target: 0x%x, control: 0x%x", target->vel, target->control);
 
                         printf("\r");
                         needlf = TRUE;

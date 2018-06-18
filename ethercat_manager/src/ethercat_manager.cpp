@@ -158,8 +158,6 @@ void EtherCatManager::getStatus(int slave_no, std::string &name, int &eep_man, i
 
 void EtherCatManager::write(int slave_no, uint8_t channel, uint8_t value){
   boost::mutex::scoped_lock lock(iomap_mutex_);
-  //std::cout<<"I am writing"<<std::endl;
-  //std::cout<<ec_slave[slave_no].outputs[channel]<<" : "<<value<<std::endl;
   ec_slave[slave_no].outputs[channel] = value;
 }
 
@@ -288,6 +286,9 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     num_pdo = 1;
     ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);*/
 
+    uint8 buf8;
+    ec_SDOwrite(cnt,0x6060,9,TRUE,sizeof(buf8),&buf8,EC_TIMEOUTRXM);
+    //ec_SDOread(cnt, 0x6061, 0x00, FALSE, sizeof(buf8), &buf8, EC_TIMEOUTRXM);
 
     int8 num_pdo;
     int s = sizeof(num_pdo);
@@ -299,23 +300,23 @@ bool EtherCatManager::initSoem(const std::string &ifname){
 
 
 
-    int32 idx_rxpdo = 0x16020002;
+    int32 idx_rxpdo = 0x16010001;
     //int32 idx_rxpdo = 0x16020001;
     ec_SDOwrite(cnt,0x1c12,0,TRUE,sizeof(idx_rxpdo),&idx_rxpdo,EC_TIMEOUTRXM);
 
-    int32 idx_txpdo = 0x1a020003;
+    int32 idx_txpdo = 0x1a030001;
     //int32 idx_txpdo = 0x1a020001;
     ec_SDOwrite(cnt,0x1c13,0x00, TRUE, sizeof(idx_txpdo),&idx_txpdo,EC_TIMEOUTRXM);
 
+    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
 
-    uint32_t num_pdo2;
-    int s2 = sizeof(num_pdo2);
-    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x00, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
 
-    ec_SDOread(cnt, 0x1c12, 0x01, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s2, &num_pdo2, EC_TIMEOUTRXM);
-    //printf("TxPDO mapping object index %d = %04x ret=%d\n", cnt, idx_txpdo, ret);
+
+
+
   }
   int iomap_size = ec_config_map(iomap_);
   printf("SOEM IOMap size: %d\n", iomap_size);
