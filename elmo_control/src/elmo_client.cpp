@@ -9,71 +9,55 @@ static const unsigned SLEEP_TIME_MS = 1;
 ElmoClient::ElmoClient(ethercat::EtherCatManager &manager, int slave_no)
   :manager_(manager), slave_no_(slave_no){}
 
-void ElmoClient::writeOutputs(const ELmoOutput &output){
-  uint8_t map[7] ={0};
+void ElmoClient::writeOutputs(const ElmoOutput &output){
+  uint8_t map[7] = {0};
   map[0] = (output.controlword) & 0x00ff;
   map[1] = (output.controlword >> 8) & 0x00ff;
-  map[2] = output.operation_mode;
-  map[3] = (output.target_velocity) & 0x00ff;
-  map[4] = (output.target_velocity >> 8) & 0x00ff;
-  map[5] = (output.target_velocity >> 16) & 0x00ff;
-  map[6] = (output.target_velocity >> 24) & 0x00ff;
-  std::cout<<"Prepare to write outputs2:"<<output.controlword<<" : "<<output.operation_mode
-          <<std::endl;
-  for(unsigned int i=0;i<7;++i)
+  map[2] = (output.operation_mode) & 0x00ff;
+  map[3] = (output.vel) & 0x00ff;
+  map[4] = (output.vel >> 8) & 0x00ff;
+  map[5] = (output.vel >> 16) & 0x00ff;
+  map[6] = (output.vel >> 24) & 0x00ff;
+  for(unsigned int i=0;i<7;i++)
     manager_.write(slave_no_, i, map[i]);
 }
 
 ElmoInput ElmoClient::readInputs() const{
-
   ElmoInput input;
-  uint8_t map[27];
-  for(unsigned int i=0;i<27;i++){
+  uint8_t map[17];
+  for(unsigned int i=0;i<17;i++){
     map[i] = manager_.readInput(slave_no_, i);
-    //std::cout<<"readinbg unput"<<i<<std::endl;
   }
-  input.statusword =             *(uint16 *)(map+0);
-  input.operation_mode =         *(uint8 *)(map+2);
-  input.drivetemp =              *(uint16 *)(map+3);
-  input.current_actual_value =   *(uint16 *)(map+5);
-  input.position_actual_value=   *(uint32 *)(map+7);
-  input.velocity_actual_value=   *(uint32 *)(map+11);
-  input.analog_input_1 =         *(uint16 *)(map+15);
-  input.dc_supply_5v =           *(uint16 *)(map+17);
-  input.dc_link_circuit_voltage= *(uint32 *)(map+19);
-  input.digital_input =          *(uint32 *)(map+23);
-
-  std::cout<<"input.statusword: "<<input.statusword<<std::endl;
-  std::cout<<"input.operation_mode: "<<input.operation_mode<<std::endl;
-  std::cout<<"input.position_actual_value: "<<input.position_actual_value<<std::endl;
-  std::cout<<"input.drivetemp: "<<input.drivetemp<<std::endl;
-  std::cout<<"input.velocity_actual_value: "<<input.velocity_actual_value<<std::endl;
-
+  input.position = *(uint32 *)(map+0);
+  input.digital_inputs = *(uint32 *)(map+4);
+  input.velocity = *(uint32 *)(map+8);
+  input.status = *(uint16 *)(map+12);
+  input.operation_mode = *(uint8 *)(map+14);
+  input.current = *(uint16 *)(map+15);
   return input;
 }
 
-ELmoOutput ElmoClient::readOutputs() const{
-  ELmoOutput output;
+ElmoOutput ElmoClient::readOutputs() const{
+  ElmoOutput output;
   uint8_t map[7];
   for(unsigned int i=0;i<7;i++){
     map[i] = manager_.readOutput(slave_no_, i);
   }
   output.controlword = *(uint16 *)(map+0);
   output.operation_mode = *(uint8 *)(map+2);
-  output.target_velocity = *(uint32 *)(map+3);
+  output.vel = *(uint32 *)(map+3);
   return output;
 }
 
 void ElmoClient::reset(){
   ElmoInput input = readInputs();
   std::cout<<"Client reset called"<<std::endl;
-  ELmoOutput output;
-  memset(&output, 0x00, sizeof(ELmoOutput));
+  ElmoOutput output;
+  memset(&output, 0x00, sizeof(ElmoOutput));
   output.controlword = 0x0080;
-  output.operation_mode = 0x01;
-  std::cout<<"Prepare to write outputs"<<output.controlword<<" : "<<output.operation_mode
-          <<std::endl;
-  printf("op mode: 0x%04x \n",output.operation_mode);
+  output.operation_mode = 0x09;
+  printf("op mode: 0x%02x \n",output.operation_mode);
+  printf("control: 0x%04x \n",output.controlword);
   writeOutputs(output);
 }
 
@@ -116,11 +100,13 @@ PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
 }
 
 PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
-  uint16 statusword = input.statusword;
+  uint16 statusword = input.status;
 }
 
 PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
-  uint16 stausword = input.statusword;
+  uint16 stausword = input.status;
+  printf(" StatusWord: 0x%x", stausword);
+  std::cout<<"StatusWord: "<<stausword<<std::endl;
   if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
     return NOT_READY;
   else if(((stausword) & 0x004f) == 0x0040) //x1xx 0000
@@ -144,7 +130,7 @@ PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
 
 
 void ElmoClient::printPDSStatus(const ElmoInput input) const{
-  printf("StatusWord(6041h): %04x\n ",input.statusword);
+  printf("StatusWord(6041h): %04x\n ",input.status);
   switch (getPDSStatus(input)) {
   case NOT_READY:
     printf("Not ready to switch on\n");
@@ -171,10 +157,10 @@ void ElmoClient::printPDSStatus(const ElmoInput input) const{
     printf("Fault\n");
     break;
   case UNKNOWN:
-    printf("Unknown status %04x\n", input.statusword);
+    printf("Unknown status %04x\n", input.status);
     break;
   }
-  if(input.statusword & 0x0800)
+  if(input.status & 0x0800)
     printf("Internal limit active\n");
 }
 
@@ -217,44 +203,45 @@ void ElmoClient::printPDSOperation(const ElmoInput input) const{
   }
 }
 
-void ElmoClient::servoOn(){
+void ElmoClient::servoOn()
+{
   ElmoInput input = readInputs();
-  std::cout<<"Servo On called"<<std::endl;
+  std::cout<<"I am going to print PDS status"<<std::endl;
   printPDSStatus(input);
-  ELmoOutput output;
-  memset(&output, 0x00, sizeof(ELmoOutput));
-  output.operation_mode = 1;
+  ElmoOutput output;
+  memset(&output, 0x00, sizeof(ElmoOutput));
+  output.operation_mode = 9; // pp (synchronous velocity mode)
   int loop = 0;
-  while(getPDSStatus(input) != OPERATION_ENABLED){
-    switch (getPDSStatus(input)) {
-    case SWITCH_DISABLED:
-      output.controlword = 0x0006; //move to ready to switch on
-      std::cout<<"moving to ready to switch on"<<std::endl;
-      break;
-    case READY_SWITCH:
-      output.controlword = 0x0007; // move to switched on
-      break;
-    case SWITCHED_ON:
-      output.controlword = 0x000f; //move to operation enabled
-      break;
-    case OPERATION_ENABLED:
-      break;
-    default:
-      printf("unknown status");
-      return;
-    }
+  while (getPDSStatus(input) != OPERATION_ENABLED) {
+    switch ( getPDSStatus(input) ) {
+      case SWITCH_DISABLED:
+  output.controlword = 0x0006; // move to ready to switch on
+  break;
+      case READY_SWITCH:
+  output.controlword = 0x0007; // move to switched on
+  break;
+      case SWITCHED_ON:
+  output.controlword = 0x000f; // move to operation enabled
+  break;
+      case OPERATION_ENABLED:
+  break;
+      default:
+  printf("unknown status");
+  return;
+      }
     writeOutputs(output);
     usleep(SLEEP_TIME_MS*1000);
     input = readInputs();
-    if(loop++ % 100 ==1) printPDSStatus(input);
+    if (loop++ % 100 == 1) printPDSStatus(input);
   }
 }
+
 
 void ElmoClient::servoOff(){
   ElmoInput input = readInputs();
   printPDSStatus(input);
-  ELmoOutput output;
-  memset(&output, 0x00, sizeof(ELmoOutput));
+  ElmoOutput output;
+  memset(&output, 0x00, sizeof(ElmoOutput));
   int loop = 0;
   while(getPDSStatus(input) != SWITCH_DISABLED){
     switch (getPDSStatus(input)) {
@@ -279,6 +266,7 @@ void ElmoClient::servoOff(){
   }
 }
 
+/*
 void ElmoClient::setTorqueForEmergencyStop(double val){
   int16_t i16val = (int16_t)val;
   manager_.writeSDO<int16_t>(slave_no_, 0x3511, 0x00, i16val);
@@ -302,6 +290,6 @@ void ElmoClient::setMotorWorkingRange(double val){
 void ElmoClient::setProfileVeclocity(uint32_t val){
   uint32_t u32val = (uint32_t)val;
   manager_.writeSDO<uint32_t>(slave_no_, 0x6081, 0x00, u32val);
-}
+}*/
 
 }

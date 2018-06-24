@@ -11,23 +11,19 @@ class EtherCatManager;
 namespace  elmo_control {
 
 typedef struct{
-  uint16 statusword;
-  uint8 operation_mode;
-  uint16 drivetemp;
-  uint16 current_actual_value;
-  uint32 position_actual_value;
-  uint32 velocity_actual_value;
-  uint16 analog_input_1;
-  uint16 dc_supply_5v;
-  uint32 dc_link_circuit_voltage;
-  uint32 digital_input;
+  int32 position;
+  int32 digital_inputs;
+  int32 velocity;
+  uint16 status;
+  int8 operation_mode;
+  uint16 current;
 }ElmoInput;
 
 typedef struct{
   uint16 controlword;
-  uint8 operation_mode;
-  uint32 target_velocity;
-}ELmoOutput;
+  uint8  operation_mode;
+  uint32 vel;
+}ElmoOutput;
 
 typedef enum {NOT_READY, SWITCH_DISABLED, READY_SWITCH, SWITCHED_ON, OPERATION_ENABLED, QUICK_STOP, FAULT_REACTION, FAULT, UNKNOWN} PDS_STATUS;
 
@@ -38,9 +34,9 @@ typedef enum{}PDS_CONTROL;
 class ElmoClient{
 public:
   ElmoClient(ethercat::EtherCatManager& manager, int slave_no);
-  void writeOutputs(const ELmoOutput& output);
+  void writeOutputs(const ElmoOutput& output);
   ElmoInput readInputs() const;
-  ELmoOutput readOutputs() const;
+  ElmoOutput readOutputs() const;
   void reset();
   void servoOn();
   void servoOff();

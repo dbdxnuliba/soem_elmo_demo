@@ -244,80 +244,83 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     return false;
   }
 
-  /*for(int cnt = 1; cnt<=ec_slavecount;cnt++){
-    int ret = 0, l;
-    uint8_t num_entries;
-    l = sizeof(num_entries);
-    ret+=ec_SDOread(cnt, 0x1603, 0x00, FALSE, &l, &num_entries, EC_TIMEOUTRXM);
-    printf("len = %d\n", num_entries);
-    num_entries = 0;
-    ret +=ec_SDOwrite(cnt, 0x1603, 0x00, FALSE, sizeof(num_entries), &num_entries, EC_TIMEOUTRXM);
-    uint32_t mapping;
-    mapping = 0x60B10020;
-    ret +=ec_SDOwrite(cnt, 0x1603, 0x09, FALSE, sizeof(mapping), &mapping, EC_TIMEOUTRXM);
-    num_entries = 9;
-    ret += ec_SDOwrite(cnt, 0x1603, 0x00, FALSE, sizeof(num_entries), &num_entries, EC_TIMEOUTRXM);
-    ret += ec_SDOread(cnt, 0x1603, 0x00, FALSE, &l, &num_entries, EC_TIMEOUTRXM);
-    printf("len = %d\n", num_entries);
-    /*int32 ob2;int os;
-    os=sizeof(ob2); ob2 = 0x16030001;
-    ec_SDOwrite(1,0x1c12,0,TRUE,os,&ob2,EC_TIMEOUTRXM);
-    os=sizeof(ob2); ob2 = 0x1a020000;
-    ec_SDOwrite(1,0x1c13,0, TRUE, os,&ob2,EC_TIMEOUTRXM);
-
-
-  }*/
-
   for( int cnt = 1 ; cnt <= ec_slavecount ; cnt++){
-    /*int ret = 0, l;
-    uint8_t num_pdo;
-    ret += ec_SDOwrite(cnt, 0x1c12, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
-    uint16_t idx_rxpdo = 0x1603;
-    ret += ec_SDOwrite(cnt, 0x1c12, 0x01, FALSE, sizeof(idx_rxpdo), &idx_rxpdo, EC_TIMEOUTRXM);
-    num_pdo = 1;
-    ret += ec_SDOwrite(cnt, 0x1c12, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
-    printf("RxPDO mapping object index %d = %04x ret=%d\n", cnt, idx_rxpdo, ret);
-    num_pdo = 0;
-    ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);
+    /** set PDO mapping */
+    int wkc = 0;
+    int num_pdo = 0;
+
+    //First setting 0 to both sync manager
+    wkc +=ec_SDOwrite(1,0x1C12,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1C13,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+
+    //setting TPDO to 0
+    wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+
+    //1st entry: position actual
+    int32 position_actual = 0x60640020;
+    wkc +=ec_SDOwrite(1,0x1A08,1, TRUE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
+
+    //2nd entry: digital inputs
+    int32 digital_inputs = 0x60FD0020;
+    wkc +=ec_SDOwrite(1,0x1A08,2, TRUE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
+
+    //3rd entry: velocity actual
+    int32 velocity_actual = 0x606C0020;
+    wkc +=ec_SDOwrite(1,0x1A08,3, TRUE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
+
+    //4th entry: statusword
+    int32 statusword = 0x60410010;
+    wkc +=ec_SDOwrite(1,0x1A08,4, TRUE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
+
+    //5th entry: mode of operation display
+    int32 mode_of_op_disp = 0x60610008;
+    wkc +=ec_SDOwrite(1,0x1A08,5, TRUE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
+
+    //6th entry: current actual value
+    int32 current_actual = 0x60780010;
+    wkc +=ec_SDOwrite(1,0x1A08,6, TRUE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
+
+    //setting total number of entries
+    int t_num_of_entries = 6;
+    wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
 
 
-    uint16_t idx_txpdo = 0x1a01;
-    ret += ec_SDOwrite(cnt, 0x1c13, 0x01, FALSE, sizeof(idx_txpdo), &idx_txpdo, EC_TIMEOUTRXM);
-    num_pdo = 1;
-    ret += ec_SDOwrite(cnt, 0x1c13, 0x00, FALSE, sizeof(num_pdo), &num_pdo, EC_TIMEOUTRXM);*/
+    //setting RPDO to 0
+    wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
-    uint8 buf8;
-    ec_SDOwrite(cnt,0x6060,9,TRUE,sizeof(buf8),&buf8,EC_TIMEOUTRXM);
-    //ec_SDOread(cnt, 0x6061, 0x00, FALSE, sizeof(buf8), &buf8, EC_TIMEOUTRXM);
+    //1st entry: control word
+    int32 controlword = 0x60400010;
+    wkc +=ec_SDOwrite(1,0x1608,1, TRUE, sizeof(controlword),&controlword,EC_TIMEOUTRXM);
 
-    int8 num_pdo;
-    int s = sizeof(num_pdo);
-    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    //2nd entry: model of operation
+    int32 mode_of_op = 0x60600008;
+    wkc +=ec_SDOwrite(1,0x1608,2, TRUE, sizeof(mode_of_op),&mode_of_op,EC_TIMEOUTRXM);
 
-    ec_SDOread(cnt, 0x1c12, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
+    //3rd entry: target velocity
+    int32 target_velocity = 0x60FF0020;
+    wkc +=ec_SDOwrite(1,0x1608,3, TRUE, sizeof(target_velocity),&target_velocity,EC_TIMEOUTRXM);
 
+    //setting total number of entries
+    int r_num_of_entries = 3;
+    wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(r_num_of_entries),&r_num_of_entries,EC_TIMEOUTRXM);
 
+    //Finally setting the mapping
+    int16 rxpdo = 0x1608;
+    wkc +=ec_SDOwrite(1,0x1C12,0x01, FALSE, sizeof(rxpdo),&rxpdo,EC_TIMEOUTRXM);
 
-    int32 idx_rxpdo = 0x16010001;
-    //int32 idx_rxpdo = 0x16020001;
-    ec_SDOwrite(cnt,0x1c12,0,TRUE,sizeof(idx_rxpdo),&idx_rxpdo,EC_TIMEOUTRXM);
+    int16 txpdo = 0x1A08;
+    wkc +=ec_SDOwrite(1,0x1C13,0x01, FALSE, sizeof(txpdo),&txpdo,EC_TIMEOUTRXM);
 
-    int32 idx_txpdo = 0x1a030001;
-    //int32 idx_txpdo = 0x1a020001;
-    ec_SDOwrite(cnt,0x1c13,0x00, TRUE, sizeof(idx_txpdo),&idx_txpdo,EC_TIMEOUTRXM);
+    //Setting number of rxpdo
+    int num_rpdo = 1;
+    wkc +=ec_SDOwrite(1,0x1C12,0x00, FALSE, sizeof(num_rpdo),&num_rpdo,EC_TIMEOUTRXM);
 
-    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-
-    ec_SDOread(cnt, 0x1c12, 0x00, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-    ec_SDOread(cnt, 0x1c13, 0x01, FALSE, &s, &num_pdo, EC_TIMEOUTRXM);
-
-
-
-
+    //Setting number of txpdo
+    int num_tpdo = 1;
+    wkc +=ec_SDOwrite(1,0x1C13,0x00, FALSE, sizeof(num_tpdo),&num_tpdo,EC_TIMEOUTRXM);
   }
+
+
   int iomap_size = ec_config_map(iomap_);
   printf("SOEM IOMap size: %d\n", iomap_size);
   ec_configdc();

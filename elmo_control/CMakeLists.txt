@@ -114,7 +114,7 @@ find_package (Threads)
 catkin_package(
   INCLUDE_DIRS
     include
-  LIBRARIES elmo_client elmo_hardware_interface
+  LIBRARIES elmo_client #elmo_hardware_interface
   CATKIN_DEPENDS roscpp diagnostic_updater trajectory_msgs sensor_msgs
 #  DEPENDS system_lib
 )
@@ -154,6 +154,9 @@ target_link_libraries(simple_example ${catkin_LIBRARIES} elmo_client)
 add_executable(simple_example2 src/tests/simple_example2.cpp)
 target_link_libraries(simple_example2 ${catkin_LIBRARIES} elmo_client)
 
+add_executable(simple_example3 src/tests/simple_example3.cpp)
+target_link_libraries(simple_example3 ${catkin_LIBRARIES} elmo_client)
+
 add_executable(example src/tests/example.cpp)
 target_link_libraries(example ${catkin_LIBRARIES} elmo_client)
 
@@ -188,12 +191,16 @@ target_link_libraries(simple_test_vel4 ${catkin_LIBRARIES} elmo_client pthread)
 add_executable(simple_test_vel5 src/tests/simple_test_vel5.cpp)
 target_link_libraries(simple_test_vel5 ${catkin_LIBRARIES} elmo_client pthread)
 
+add_executable(simple_test_vel6 src/tests/simple_test_vel6.cpp)
+target_link_libraries(simple_test_vel6 ${catkin_LIBRARIES} elmo_client pthread)
+
+
 add_executable(menu src/tests/menu.cpp)
 target_link_libraries(menu ${catkin_LIBRARIES} elmo_client pthread)
 
-add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
+#add_executable(elmo src/elmo.cpp src/elmo_hardware_interface.cpp)
 #add_dependencies(elmo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(elmo elmo_client ${catkin_LIBRARIES})
+#target_link_libraries(elmo elmo_client ${catkin_LIBRARIES})
 
 
 
