@@ -236,59 +236,59 @@ void simpletest(char *ifname)
          int num_pdo = 0;
 
          //First setting 0 to both sync manager
-         wkc +=ec_SDOwrite(1,0x1C12,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
-         wkc +=ec_SDOwrite(1,0x1C13,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1C12,0, FALSE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1C13,0, FALSE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
          //setting TPDO to 0
-         wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,0, FALSE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
          //1st entry: position actual
          int32 position_actual = 0x60640020;
-         wkc +=ec_SDOwrite(1,0x1A08,1, TRUE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,1, FALSE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
 
          //2nd entry: digital inputs
          int32 digital_inputs = 0x60FD0020;
-         wkc +=ec_SDOwrite(1,0x1A08,2, TRUE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,2, FALSE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
 
          //3rd entry: velocity actual
          int32 velocity_actual = 0x606C0020;
-         wkc +=ec_SDOwrite(1,0x1A08,3, TRUE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,3, FALSE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
 
          //4th entry: statusword
          int32 statusword = 0x60410010;
-         wkc +=ec_SDOwrite(1,0x1A08,4, TRUE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,4, FALSE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
 
          //5th entry: mode of operation display
          int32 mode_of_op_disp = 0x60610008;
-         wkc +=ec_SDOwrite(1,0x1A08,5, TRUE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,5, FALSE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
 
          //6th entry: current actual value
          int32 current_actual = 0x60780010;
-         wkc +=ec_SDOwrite(1,0x1A08,6, TRUE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1A08,6, FALSE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
 
          //setting total number of entries
-         int t_num_of_entries = 6;
-         wkc +=ec_SDOwrite(1,0x1A08,0, TRUE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
+         uint8_t t_num_of_entries = 6;
+         wkc +=ec_SDOwrite(1,0x1A08,0, FALSE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
 
 
          //setting RPDO to 0
-         wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1608,0, FALSE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);
 
          //1st entry: control word
          int32 controlword = 0x60400010;
-         wkc +=ec_SDOwrite(1,0x1608,1, TRUE, sizeof(controlword),&controlword,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1608,1, FALSE, sizeof(controlword),&controlword,EC_TIMEOUTRXM);
 
          //2nd entry: model of operation
          int32 mode_of_op = 0x60600008;
-         wkc +=ec_SDOwrite(1,0x1608,2, TRUE, sizeof(mode_of_op),&mode_of_op,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1608,2, FALSE, sizeof(mode_of_op),&mode_of_op,EC_TIMEOUTRXM);
 
          //3rd entry: target velocity
          int32 target_velocity = 0x60FF0020;
-         wkc +=ec_SDOwrite(1,0x1608,3, TRUE, sizeof(target_velocity),&target_velocity,EC_TIMEOUTRXM);
+         wkc +=ec_SDOwrite(1,0x1608,3, FALSE, sizeof(target_velocity),&target_velocity,EC_TIMEOUTRXM);
 
          //setting total number of entries
-         int r_num_of_entries = 3;
-         wkc +=ec_SDOwrite(1,0x1608,0, TRUE, sizeof(r_num_of_entries),&r_num_of_entries,EC_TIMEOUTRXM);
+         uint8_t r_num_of_entries = 3;
+         wkc +=ec_SDOwrite(1,0x1608,0, FALSE, sizeof(r_num_of_entries),&r_num_of_entries,EC_TIMEOUTRXM);
 
          //Finally setting the mapping
          int16 rxpdo = 0x1608;
