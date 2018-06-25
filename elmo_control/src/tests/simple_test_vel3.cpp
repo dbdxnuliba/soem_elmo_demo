@@ -375,7 +375,8 @@ void simpletest(char *ifname)
              * Drive state machine transistions
              *   0 -> 6 -> 7 -> 15
              */
-            READ(0x6041, 0, buf16, "*status word*");
+
+            /*READ(0x6041, 0, buf16, "*status word*");
             if(buf16 == 0x218){
                 WRITE(0x6040, 0, buf16, 128, "*control word*"); usleep(100000);
                 READ(0x6041, 0, buf16, "*status word*");
@@ -394,16 +395,16 @@ void simpletest(char *ifname)
             WRITE(0x6040, 0, buf16, 15, "*control word*"); usleep(100000);
             READ(0x6041, 0, buf16, "*status word*");
 
-   CHECKERROR();
+            CHECKERROR();
             READ(0x1a0b, 0, buf8, "OpMode Display");
 
             READ(0x6061, 0, buf16, "*Mode of Operation*");
-            std::cout<<"Mode of Operation now: : "<<(buf16 & 0x006f)<<std::endl;
+            std::cout<<"Mode of Operation now: : "<<(buf16 & 0x006f)<<std::endl;*/
 
 
             int reachedInitial = 0;
 
-            READ(0x1001, 0, buf8, "Error");
+            //READ(0x1001, 0, buf8, "Error");
 
             /* cyclic loop */
             VelOut target;

@@ -51,18 +51,15 @@ ElmoOutput ElmoClient::readOutputs() const{
 
 void ElmoClient::reset(){
   ElmoInput input = readInputs();
-  std::cout<<"Client reset called"<<std::endl;
   ElmoOutput output;
   memset(&output, 0x00, sizeof(ElmoOutput));
   output.controlword = 0x0080;
   output.operation_mode = 0x09;
-  printf("op mode: 0x%02x \n",output.operation_mode);
-  printf("control: 0x%04x \n",output.controlword);
   writeOutputs(output);
 }
 
 
-
+/*
 PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
   uint8 operation_mode = input.operation_mode;
   switch (operation_mode) {
@@ -97,7 +94,7 @@ PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
     return CYCLIC_SYNCHRONOUS_TORQUE_MODE;
     break;
   }
-}
+}*/
 
 PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
   uint16 statusword = input.status;
@@ -105,8 +102,6 @@ PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
 
 PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
   uint16 stausword = input.status;
-  printf(" StatusWord: 0x%x", stausword);
-  std::cout<<"StatusWord: "<<stausword<<std::endl;
   if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
     return NOT_READY;
   else if(((stausword) & 0x004f) == 0x0040) //x1xx 0000
@@ -164,6 +159,7 @@ void ElmoClient::printPDSStatus(const ElmoInput input) const{
     printf("Internal limit active\n");
 }
 
+/*
 void ElmoClient::printPDSOperation(const ElmoInput input) const{
   printf("Mode of operation(6061h): %04x\n", input.operation_mode);
   switch (getPDSOperation(input)) {
@@ -201,16 +197,13 @@ void ElmoClient::printPDSOperation(const ElmoInput input) const{
     printf("Reserved %04x\n", input.operation_mode);
     break;
   }
-}
+}*/
 
 void ElmoClient::servoOn()
 {
   ElmoInput input = readInputs();
-  std::cout<<"I am going to print PDS status"<<std::endl;
-  printPDSStatus(input);
   ElmoOutput output;
   memset(&output, 0x00, sizeof(ElmoOutput));
-  output.operation_mode = 9; // pp (synchronous velocity mode)
   int loop = 0;
   while (getPDSStatus(input) != OPERATION_ENABLED) {
     switch ( getPDSStatus(input) ) {
