@@ -157,6 +157,9 @@ target_link_libraries(simple_example2 ${catkin_LIBRARIES} elmo_client)
 add_executable(simple_example3 src/tests/simple_example3.cpp)
 target_link_libraries(simple_example3 ${catkin_LIBRARIES} elmo_client)
 
+add_executable(simple_example4 src/tests/simple_example4.cpp)
+target_link_libraries(simple_example4 ${catkin_LIBRARIES} elmo_client)
+
 add_executable(example src/tests/example.cpp)
 target_link_libraries(example ${catkin_LIBRARIES} elmo_client)
 

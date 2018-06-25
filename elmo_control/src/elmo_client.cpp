@@ -56,6 +56,7 @@ void ElmoClient::reset(){
   output.controlword = 0x0080;
   output.operation_mode = 0x09;
   writeOutputs(output);
+  std::cout<<"Reset called"<<std::endl;
 }
 
 
