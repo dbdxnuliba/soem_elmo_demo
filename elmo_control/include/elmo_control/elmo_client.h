@@ -12,20 +12,6 @@ class EtherCatManager;
 
 namespace  elmo_control {
 
-/*typedef struct{
-  int32 position;
-  int16 torque;
-  int32 velocity;
-  uint16 status;
-  int8 operation_mode;
-  uint16 current;
-}ElmoInput;
-
-typedef struct{
-  uint16 controlword;
-  uint8  operation_mode;
-  uint32 vel;
-}ElmoOutput;*/
 
 typedef struct{
   int32_t position;

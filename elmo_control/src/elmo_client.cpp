@@ -21,43 +21,7 @@ void ElmoClient::writeOutputs(const ElmoOutput &output){
   for(unsigned int i=0;i<7;i++)
     manager_.write(slave_no_, i, map[i]);
 }
-/*
-ElmoInput ElmoClient::readInputs() const{
-  ElmoInput input;
-  uint8_t map[15];
-  for(unsigned int i=0;i<15;i++){
-    map[i] = manager_.readInput(slave_no_, i);
-  }
-  input.position = *(uint32 *)(map+0);
-  input.torque = *(uint16 *)(map+4);
-  input.velocity = *(uint32 *)(map+2);
-  input.status = *(uint16 *)(map+10);
-  input.operation_mode = *(uint8 *)(map+12);
-  input.current = *(uint16 *)(map+14);
-  return input;
-}
 
-ElmoOutput ElmoClient::readOutputs() const{
-  ElmoOutput output;
-  uint8_t map[7];
-  for(unsigned int i=0;i<7;i++){
-    map[i] = manager_.readOutput(slave_no_, i);
-  }
-  output.controlword = *(uint16 *)(map+0);
-  output.operation_mode = *(uint8 *)(map+2);
-  output.vel = *(uint32 *)(map+3);
-  return output;
-}
-
-void ElmoClient::reset(){
-  ElmoInput input = readInputs();
-  ElmoOutput output;
-  memset(&output, 0x00, sizeof(ElmoOutput));
-  output.controlword = 0x0080;
-  output.operation_mode = 0x09;
-  writeOutputs(output);
-  std::cout<<"Reset called"<<std::endl;
-}*/
 
 ElmoInput ElmoClient::readInputs() const{
   ElmoInput input;
@@ -96,43 +60,6 @@ void ElmoClient::reset(){
   std::cout<<"Reset called"<<std::endl;
 }
 
-
-/*
-PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
-  uint8 operation_mode = input.operation_mode;
-  switch (operation_mode) {
-  case 0:
-    return NO_MODE_CHANGE;
-    break;
-  case 1:
-    return PROFILE_POSITION_MODE;
-    break;
-  case 2:
-    return VELOCITY_MODE;
-    break;
-  case 3:
-    return PROFILE_VELOCITY_MODE;
-    break;
-  case 4:
-    return TORQUE_PROFILE_MODE;
-    break;
-  case 6:
-    return HOMING_MODE;
-    break;
-  case 7:
-    return INTERPOLATED_POSITION_MODE;
-    break;
-  case 8:
-    return CYCLIC_SYNCHRONOUS_POSITION_MODE;
-    break;
-  case 9:
-    return CYCLIC_SYNCHRONOUS_VELOCITY_MODE;
-    break;
-  case 10:
-    return CYCLIC_SYNCHRONOUS_TORQUE_MODE;
-    break;
-  }
-}*/
 
 PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
   uint16_t statusword = input.status;
@@ -197,45 +124,7 @@ void ElmoClient::printPDSStatus(const ElmoInput input) const{
     printf("Internal limit active\n");
 }
 
-/*
-void ElmoClient::printPDSOperation(const ElmoInput input) const{
-  printf("Mode of operation(6061h): %04x\n", input.operation_mode);
-  switch (getPDSOperation(input)) {
-  case NO_MODE_CHANGE:
-    printf("NO mode change\n");
-    break;
-  case PROFILE_POSITION_MODE:
-    printf("Profile position mode\n");
-    break;
-  case VELOCITY_MODE:
-    printf("Velocity mode. NOt supported\n");
-    break;
-  case PROFILE_VELOCITY_MODE:
-    printf("Profile velocity mode\n");
-    break;
-  case TORQUE_PROFILE_MODE:
-    printf("Torque profile mode\n");
-    break;
-  case HOMING_MODE:
-    printf("Homing mode\n");
-    break;
-  case INTERPOLATED_POSITION_MODE:
-    printf("Interpolated position mode\n");
-    break;
-  case CYCLIC_SYNCHRONOUS_POSITION_MODE:
-    printf("Cyclic synchronous position mode\n");
-    break;
-  case CYCLIC_SYNCHRONOUS_VELOCITY_MODE:
-    printf("Cyclic synchronous velocity mode\n");
-    break;
-  case CYCLIC_SYNCHRONOUS_TORQUE_MODE:
-    printf("Cyclic synchronous torque mode\n");
-    break;
-  default:
-    printf("Reserved %04x\n", input.operation_mode);
-    break;
-  }
-}*/
+
 
 void ElmoClient::servoOn()
 {
@@ -297,30 +186,5 @@ void ElmoClient::servoOff(){
   }
 }
 
-/*
-void ElmoClient::setTorqueForEmergencyStop(double val){
-  int16_t i16val = (int16_t)val;
-  manager_.writeSDO<int16_t>(slave_no_, 0x3511, 0x00, i16val);
-}
-
-void ElmoClient::setOverLoadLevel(double val){
-  int16_t i16val = (int16_t)val;
-  manager_.writeSDO<int16_t>(slave_no_, 0x3512, 0x00, i16val);
-}
-
-void ElmoClient::setOverSpeedLevel(double val){
-  int16_t i16val = (int16_t)val;
-  manager_.writeSDO<int16_t>(slave_no_, 0x3513, 0x00, i16val);
-}
-
-void ElmoClient::setMotorWorkingRange(double val){
-  int16_t i16val = (int16_t)val;
-  manager_.writeSDO<int16_t>(slave_no_, 0x3514, 0x00, i16val);
-}
-
-void ElmoClient::setProfileVeclocity(uint32_t val){
-  uint32_t u32val = (uint32_t)val;
-  manager_.writeSDO<uint32_t>(slave_no_, 0x6081, 0x00, u32val);
-}*/
 
 }
