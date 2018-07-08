@@ -207,10 +207,6 @@ T EtherCatManager::readSDO(int slave_no, uint16_t index, uint8_t subidx) const{
 }
 
 
-//doubt here
-//#define IF_ELMO(_ec_slave) (((int)_ec_slave.eep_man == 0x066f) && ((((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0x5) || (((0xf0000000&(int)ec_slave[cnt].eep_id)>>28) == 0xD)))
-
-
 bool EtherCatManager::initSoem(const std::string &ifname){
   const static unsigned MAX_BUFF_SIZE = 1024;
   char buffer[MAX_BUFF_SIZE];
@@ -244,6 +240,19 @@ bool EtherCatManager::initSoem(const std::string &ifname){
     return false;
   }
 
+  /*
+   * TXPDO : 120 bits
+   * position actual(32)
+   * torque actual(16)
+   * velocity actual(32)
+   * status word (16)
+   * Modes of Operation Display(8)
+   * Current Actual value (16)
+   *
+   * RXPDO : 56 bits
+   * controlword (16)
+   * Modes of operation (8)*/
+
   for( int cnt = 1 ; cnt <= ec_slavecount ; cnt++){
     /** set PDO mapping */
     int wkc = 0;
@@ -258,32 +267,31 @@ bool EtherCatManager::initSoem(const std::string &ifname){
 
     //1st entry: position actual
     int32 position_actual = 0x60640020;
-    wkc +=ec_SDOwrite(cnt,0x1A08,1, FALSE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1A08,1, FALSE, sizeof(position_actual),&position_actual,EC_TIMEOUTRXM);
 
-    //2nd entry: digital inputs
-    int32 digital_inputs = 0x60FD0020;
-    wkc +=ec_SDOwrite(cnt,0x1A08,2, FALSE, sizeof(digital_inputs),&digital_inputs,EC_TIMEOUTRXM);
+    //2nd entry: torque actual
+    int32 torque_actual = 0x60770010;
+    wkc +=ec_SDOwrite(1,0x1A08,2, FALSE, sizeof(torque_actual),&torque_actual,EC_TIMEOUTRXM);
 
     //3rd entry: velocity actual
     int32 velocity_actual = 0x606C0020;
-    wkc +=ec_SDOwrite(cnt,0x1A08,3, FALSE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1A08,3, FALSE, sizeof(velocity_actual),&velocity_actual,EC_TIMEOUTRXM);
 
     //4th entry: statusword
     int32 statusword = 0x60410010;
-    wkc +=ec_SDOwrite(cnt,0x1A08,4, FALSE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1A08,4, FALSE, sizeof(statusword),&statusword,EC_TIMEOUTRXM);
 
     //5th entry: mode of operation display
     int32 mode_of_op_disp = 0x60610008;
-    wkc +=ec_SDOwrite(cnt,0x1A08,5, FALSE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1A08,5, FALSE, sizeof(mode_of_op_disp),&mode_of_op_disp,EC_TIMEOUTRXM);
 
     //6th entry: current actual value
     int32 current_actual = 0x60780010;
-    wkc +=ec_SDOwrite(cnt,0x1A08,6, FALSE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
+    wkc +=ec_SDOwrite(1,0x1A08,6, FALSE, sizeof(current_actual),&current_actual,EC_TIMEOUTRXM);
 
     //setting total number of entries
     uint8_t t_num_of_entries = 6;
-    wkc +=ec_SDOwrite(cnt,0x1A08,0, FALSE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
-
+    wkc +=ec_SDOwrite(1,0x1A08,0, FALSE, sizeof(t_num_of_entries),&t_num_of_entries,EC_TIMEOUTRXM);
 
     //setting RPDO to 0
     wkc +=ec_SDOwrite(cnt,0x1608,0, FALSE, sizeof(num_pdo),&num_pdo,EC_TIMEOUTRXM);

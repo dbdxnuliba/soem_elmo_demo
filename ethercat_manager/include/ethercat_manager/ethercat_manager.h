@@ -1,3 +1,9 @@
+/**
+ *  (c) 2018, Abhijit Makhal.
+ *  Ethercat Manager
+ *  Reading data from driver and writing data to driver (ELMO) using SOEM library
+ */
+
 #ifndef ETHERCAT_MANAGER_H
 #define ETHERCAT_MANAGER_H
 

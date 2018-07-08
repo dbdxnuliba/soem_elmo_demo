@@ -2,7 +2,9 @@
 #define ELMO_CLIENT_H
 
 #include <ethercat_manager/ethercat_manager.h>
-#include <soem/osal.h>
+#include <cstdint>
+
+
 
 namespace ethercat {
 class EtherCatManager;
@@ -10,9 +12,9 @@ class EtherCatManager;
 
 namespace  elmo_control {
 
-typedef struct{
+/*typedef struct{
   int32 position;
-  int32 digital_inputs;
+  int16 torque;
   int32 velocity;
   uint16 status;
   int8 operation_mode;
@@ -23,7 +25,23 @@ typedef struct{
   uint16 controlword;
   uint8  operation_mode;
   uint32 vel;
+}ElmoOutput;*/
+
+typedef struct{
+  int32_t position;
+  int16_t torque;
+  int32_t velocity;
+  uint16_t status;
+  int8_t operation_mode;
+  uint16_t current;
+}ElmoInput;
+
+typedef struct{
+  uint16_t controlword;
+  uint8_t  operation_mode;
+  uint32_t vel;
 }ElmoOutput;
+
 
 typedef enum {NOT_READY, SWITCH_DISABLED, READY_SWITCH, SWITCHED_ON, OPERATION_ENABLED, QUICK_STOP, FAULT_REACTION, FAULT, UNKNOWN} PDS_STATUS;
 

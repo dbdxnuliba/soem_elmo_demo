@@ -1,5 +1,5 @@
 #include <elmo_control/elmo_client.h>
-#include <stdio.h>
+
 
 namespace elmo_control {
 
@@ -21,19 +21,19 @@ void ElmoClient::writeOutputs(const ElmoOutput &output){
   for(unsigned int i=0;i<7;i++)
     manager_.write(slave_no_, i, map[i]);
 }
-
+/*
 ElmoInput ElmoClient::readInputs() const{
   ElmoInput input;
-  uint8_t map[17];
-  for(unsigned int i=0;i<17;i++){
+  uint8_t map[15];
+  for(unsigned int i=0;i<15;i++){
     map[i] = manager_.readInput(slave_no_, i);
   }
   input.position = *(uint32 *)(map+0);
-  input.digital_inputs = *(uint32 *)(map+4);
-  input.velocity = *(uint32 *)(map+8);
-  input.status = *(uint16 *)(map+12);
-  input.operation_mode = *(uint8 *)(map+14);
-  input.current = *(uint16 *)(map+15);
+  input.torque = *(uint16 *)(map+4);
+  input.velocity = *(uint32 *)(map+2);
+  input.status = *(uint16 *)(map+10);
+  input.operation_mode = *(uint8 *)(map+12);
+  input.current = *(uint16 *)(map+14);
   return input;
 }
 
@@ -46,6 +46,43 @@ ElmoOutput ElmoClient::readOutputs() const{
   output.controlword = *(uint16 *)(map+0);
   output.operation_mode = *(uint8 *)(map+2);
   output.vel = *(uint32 *)(map+3);
+  return output;
+}
+
+void ElmoClient::reset(){
+  ElmoInput input = readInputs();
+  ElmoOutput output;
+  memset(&output, 0x00, sizeof(ElmoOutput));
+  output.controlword = 0x0080;
+  output.operation_mode = 0x09;
+  writeOutputs(output);
+  std::cout<<"Reset called"<<std::endl;
+}*/
+
+ElmoInput ElmoClient::readInputs() const{
+  ElmoInput input;
+  uint8_t map[15];
+  for(unsigned int i=0;i<15;i++){
+    map[i] = manager_.readInput(slave_no_, i);
+  }
+  input.position = *(uint32_t *)(map+0);
+  input.torque = *(uint16_t *)(map+4);
+  input.velocity = *(uint32_t *)(map+2);
+  input.status = *(uint16_t *)(map+10);
+  input.operation_mode = *(uint8_t *)(map+12);
+  input.current = *(uint16_t *)(map+14);
+  return input;
+}
+
+ElmoOutput ElmoClient::readOutputs() const{
+  ElmoOutput output;
+  uint8_t map[7];
+  for(unsigned int i=0;i<7;i++){
+    map[i] = manager_.readOutput(slave_no_, i);
+  }
+  output.controlword = *(uint16_t *)(map+0);
+  output.operation_mode = *(uint8_t *)(map+2);
+  output.vel = *(uint32_t *)(map+3);
   return output;
 }
 
@@ -98,11 +135,11 @@ PDS_OPERATION ElmoClient::getPDSOperation(const ElmoInput input) const{
 }*/
 
 PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
-  uint16 statusword = input.status;
+  uint16_t statusword = input.status;
 }
 
 PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
-  uint16 stausword = input.status;
+  uint16_t stausword = input.status;
   if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
     return NOT_READY;
   else if(((stausword) & 0x004f) == 0x0040) //x1xx 0000

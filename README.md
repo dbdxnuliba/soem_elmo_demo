@@ -1,8 +1,4 @@
 # argv package
 
 
-run the launch file:
-```
-roslaunch argv_bringup argv_bringup.launch
-
-```
+Package to run ELMO motor drive and vectornav IMU
