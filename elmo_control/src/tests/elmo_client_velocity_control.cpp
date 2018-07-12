@@ -4,6 +4,8 @@
 #include <getopt.h>
 #include <time.h>
 
+#define PULSE_PER_REVOLUTE ( (1048576 / (2 * M_PI) ) * 101 ) // 20 bit / 101 reduction
+
 
 static const int NSEC_PER_SECOND = 1e+9;
 static const int USEC_PER_SECOND = 1e+6;
@@ -71,8 +73,11 @@ int main(int argc, char *argv[]){
         elmo_control::ElmoInput val = client->readInputs();
         elmo_control::ElmoOutput output = client->readOutputs();
         printf("Tick %8lu.%09lu", tick.tv_sec, tick.tv_nsec);
-        printf("  pos: 0x%x, torque: 0x%x, vel: 0x%x, status: 0x%x, Mode: 0x%x Current: 0x%x \n",
-               val.position, val.torque, val.velocity, val.status, val.operation_mode, val.current);
+        //printf("  pos: 0x%x, torque: 0x%x, vel: 0x%x, status: 0x%x, Mode: 0x%x Current: 0x%x \n",
+               //val.position, val.torque, val.velocity, val.status, val.operation_mode, val.current);
+
+        std::cout<<"Position: "<<double_t(val.position/PULSE_PER_REVOLUTE)<<" Velocity: "<<double_t(val.velocity/PULSE_PER_REVOLUTE)<<
+                   " Torque: "<<double_t(val.torque/PULSE_PER_REVOLUTE)<<std::endl;
 
         client->servoOn();
         output.vel = (int16_t) (sin(i/100.)*(10000));

@@ -9,6 +9,14 @@ static const unsigned SLEEP_TIME_MS = 1;
 ElmoClient::ElmoClient(ethercat::EtherCatManager &manager, int slave_no)
   :manager_(manager), slave_no_(slave_no){}
 
+/* Count the number of bits to be written
+ * If it is 1 byte or 8 bit, shift once
+ *          2 byte or 16 bit, shift twice
+ *          3 byte or 24 bit, shift 3 times
+ *          4 byte or 32 bit, shift 4 times
+ * as for example, controlword 16 bits, shifted 2 times
+ * and velocity 32 bits, shifted 4 times
+ */
 void ElmoClient::writeOutputs(const ElmoOutput &output){
   uint8_t map[7] = {0};
   map[0] = (output.controlword) & 0x00ff;
@@ -22,7 +30,10 @@ void ElmoClient::writeOutputs(const ElmoOutput &output){
     manager_.write(slave_no_, i, map[i]);
 }
 
-
+/* Count the number of bits to be read
+ * similar to writing 8 bit read 1 byte
+ *  16 bit read 2 bytes, 32 bit read 4 bytes
+ */
 ElmoInput ElmoClient::readInputs() const{
   ElmoInput input;
   uint8_t map[15];
@@ -60,11 +71,10 @@ void ElmoClient::reset(){
   std::cout<<"Reset called"<<std::endl;
 }
 
-
-PDS_CONTROL ElmoClient::getPDSControl(const ElmoInput input) const{
-  uint16_t statusword = input.status;
-}
-
+/*
+ * get current PDS status
+ * set the enum and return it
+ */
 PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
   uint16_t stausword = input.status;
   if(((stausword) & 0x004f) == 0x0000) //x0xx 0000
@@ -88,7 +98,9 @@ PDS_STATUS ElmoClient::getPDSStatus(const ElmoInput input) const{
 }
 
 
-
+/*
+ * print the current PDS status calling the getPDSStaus
+ */
 void ElmoClient::printPDSStatus(const ElmoInput input) const{
   printf("StatusWord(6041h): %04x\n ",input.status);
   switch (getPDSStatus(input)) {
@@ -125,7 +137,9 @@ void ElmoClient::printPDSStatus(const ElmoInput input) const{
 }
 
 
-
+/*
+ * run through the state machines and set the drive to op enabled mode
+ */
 void ElmoClient::servoOn()
 {
   ElmoInput input = readInputs();
@@ -156,7 +170,9 @@ void ElmoClient::servoOn()
   }
 }
 
-
+/*
+ * run through the state machines and set the drive to switched off mode
+ */
 void ElmoClient::servoOff(){
   ElmoInput input = readInputs();
   printPDSStatus(input);
