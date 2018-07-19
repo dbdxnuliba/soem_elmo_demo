@@ -171,6 +171,7 @@ uint8_t EtherCatManager::readInput(int slave_no, uint8_t channel) const{
     fprintf(stderr, "ERROR : channel(%d) is larger than Input bits (%d)\n", channel * 8, ec_slave[slave_no].Ibits);
     exit(1);
   }
+
   return ec_slave[slave_no].inputs[channel];
 }
 
@@ -232,7 +233,7 @@ bool EtherCatManager::initSoem(const std::string &ifname){
   for(int cnt =1; cnt<=ec_slavecount;cnt++){
     printf("Man: %8.8x ID: %8.8x Rev: %8.8x \n",(int)ec_slave[cnt].eep_man, (int)ec_slave[cnt].eep_id, (int)ec_slave[cnt].eep_rev);
     num_clients_++;
-  }//doubt here
+  }
   printf("Found %d ELMO Drivers\n", num_clients_);
 
   if(ec_statecheck(0, EC_STATE_PRE_OP, EC_TIMEOUTSTATE*4) != EC_STATE_PRE_OP){

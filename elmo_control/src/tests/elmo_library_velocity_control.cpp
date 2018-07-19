@@ -1,3 +1,8 @@
+/**
+  * Simple Test program to control multiple drives with different velocities
+  * with elmo library
+  */
+
 #include <elmo_control/elmo_library.h>
 #include <getopt.h>
 
@@ -43,22 +48,34 @@ int main(int argc, char **argv)
   }
 
   try{
-    elmo::ElmoLibrary elm(ifname);
-    elm.initialize();
-    //std::vector<elmo::elmo_feedback> feeds = elm.readDataFromElmo();
-    //std::cout<<"Position: "<<feeds[0].pos_feedback_<<std::endl;
 
-    /*for(int i=0;i<=5000;i++){
+    double period = 4e+6;
+    struct timespec tick;
+    clock_gettime(CLOCK_REALTIME, &tick);
+    timespecInc(tick, period);
+
+
+    elmo::ElmoLibrary* elm = new elmo::ElmoLibrary(ifname);
+    elm->initialize();
+    int motors = elm->getNumberofClients();
+    std::vector<double> vels;
+    for(int i=0;i<motors;++i){
+      vels.push_back((i+1)*0.5);
+    }
+
+    while(1){
       std::vector<elmo::elmo_feedback> feeds;
-      feeds = elm.readDataFromElmo();
-
+      feeds = elm->readDataFromElmo();
+      printf("Tick %8lu.%09lu ", tick.tv_sec, tick.tv_nsec);
       for(int j=0;j<feeds.size();++j){
-        std::cout<<"Position: "<<feeds[j].pos_feedback_<<std::endl;
+        std::cout<<"For motor["<<j+1<<"] "<< "Position: "<<feeds[j].pos_feedback<<
+                   " velocity: "<<feeds[j].vel_feedback<<
+                   " effort: "<<feeds[j].effort_feedback<<std::endl;
+
       }
-
-    }*/
-
-
+      elm->writeToElmo(vels);
+    }
+    delete elm;
   }
   catch(...){help();}
   printf("End Program\n");
