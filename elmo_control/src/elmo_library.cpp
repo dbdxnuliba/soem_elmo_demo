@@ -8,6 +8,7 @@
 
 
 namespace  elmo {
+
 ElmoLibrary::ElmoLibrary(const std::string& ifname)
     :ifname_(ifname){
 
@@ -22,7 +23,6 @@ ElmoLibrary::ElmoLibrary(const std::string& ifname)
 ElmoLibrary::~ElmoLibrary(){
   delete manager_;
 }
-
 
 void ElmoLibrary::initialize(){
   for(std::vector<elmo_control::ElmoClient*>::iterator it = clients_.begin();it != clients_.end();++it){
@@ -58,14 +58,10 @@ void ElmoLibrary::writeToElmo(std::vector<double> &velocities){
   }
   else
     std::cerr<<"The size of the velocities should be same with number of clients \n";
-
-
-
 }
 
 int ElmoLibrary::getNumberofClients(){
   return slave_no_;
 }
-
 
 }//end namespace
